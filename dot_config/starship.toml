@@ -2,10 +2,15 @@
 
 # Custom Catppuccin preset — info-rich but no segment backgrounds.
 # Multi-line layout, foreground colors only, palette = Catppuccin Mocha.
+# Always-on info: OS icon, user, hostname (when SSH), directory, time.
+# Context-aware: git, language version, docker, conda, cmd duration, exit status.
 
 palette = 'catppuccin_mocha'
 
 format = """
+$os \
+$username\
+$hostname \
 $directory\
 $git_branch\
 $git_status\
@@ -13,14 +18,41 @@ $nodejs$bun$python$rust$golang$java$kotlin$haskell$php$c\
 $docker_context\
 $conda\
 $cmd_duration\
+$time\
 $line_break\
+$status\
 $character"""
 
 add_newline = true
 
+[os]
+disabled = false
+style = "fg:peach"
+format = '[$symbol]($style)'
+
+[os.symbols]
+Macos = "󰀵"
+Linux = "󰌽"
+Ubuntu = "󰕈"
+Arch = "󰣇"
+Fedora = "󰣛"
+Debian = "󰣚"
+Alpine = ""
+
+[username]
+show_always = true
+style_user = "fg:lavender"
+style_root = "bold fg:red"
+format = '[$user]($style)'
+
+[hostname]
+ssh_only = true
+style = "fg:teal"
+format = '[@$hostname]($style)'
+
 [directory]
 style = "bold fg:sky"
-format = "[$path]($style) "
+format = " [$path]($style) "
 truncation_length = 3
 truncate_to_repo = true
 truncation_symbol = "…/"
@@ -107,8 +139,20 @@ min_time = 2000
 style = "fg:yellow"
 format = 'took [$duration]($style) '
 
+[time]
+disabled = false
+time_format = "%H:%M"
+style = "fg:overlay1"
+format = '[󰥔 $time]($style)'
+
 [line_break]
 disabled = false
+
+[status]
+disabled = false
+style = "fg:red"
+symbol = "✗ $status "
+format = '[$symbol]($style)'
 
 [character]
 success_symbol = '[❯](bold fg:green)'
