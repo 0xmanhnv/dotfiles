@@ -108,7 +108,7 @@ return {
         -- Infra / DevOps / SecOps
         terraform = { "terraform_fmt" },
         hcl = { "terraform_fmt" },
-        dockerfile = {},  -- no canonical formatter; use hadolint as linter elsewhere
+        dockerfile = {}, -- no canonical formatter; use hadolint as linter elsewhere
         solidity = { "forge_fmt" },
 
         -- Catch-all: trim trailing whitespace + final newlines for any filetype
@@ -143,10 +143,14 @@ return {
         },
         stylua = {
           prepend_args = {
-            "--column-width", "100",
-            "--indent-type", "Spaces",
-            "--indent-width", "2",
-            "--quote-style", "AutoPreferDouble",
+            "--column-width",
+            "100",
+            "--indent-type",
+            "Spaces",
+            "--indent-width",
+            "2",
+            "--quote-style",
+            "AutoPreferDouble",
           },
         },
         ["clang-format"] = {
