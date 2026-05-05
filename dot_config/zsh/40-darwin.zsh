@@ -21,7 +21,7 @@ _prepend_cellar_latest() {
 
 # Pinned-version Cellar tools (preferred over default brew shims)
 for pkg in inetutils nginx cloudtrail-cli binutils binwalk rlwrap bison \
-           freerdp wireguard-tools gemini-cli neovim 'ruby@3.2'; do
+           freerdp wireguard-tools gemini-cli neovim 'ruby@3.4'; do
   _prepend_cellar_latest "$pkg"
 done
 
@@ -31,12 +31,14 @@ for d in /opt/homebrew/Cellar/rlwrap/*/; do
 done
 unset -f _prepend_cellar_latest
 
-# Homebrew opt symlinks (stable paths)
+# Homebrew opt symlinks (keg-only formulas need explicit PATH)
 [[ -d /opt/homebrew/opt/python@3.13/bin ]] && export PATH="/opt/homebrew/opt/python@3.13/bin:$PATH"
+[[ -d /opt/homebrew/opt/openjdk@25/bin ]]  && export PATH="/opt/homebrew/opt/openjdk@25/bin:$PATH"
+[[ -d /opt/homebrew/opt/node@24/bin ]]     && export PATH="/opt/homebrew/opt/node@24/bin:$PATH"
 [[ -d /opt/homebrew/opt/openvpn/sbin ]]    && export PATH="/opt/homebrew/opt/openvpn/sbin:$PATH"
 
-# Ruby gems (user)
-[[ -d "$HOME/.gem/ruby/3.2.0/bin" ]] && export PATH="$HOME/.gem/ruby/3.2.0/bin:$PATH"
+# Ruby gems (user) — bumped to ruby 3.4
+[[ -d "$HOME/.gem/ruby/3.4.0/bin" ]] && export PATH="$HOME/.gem/ruby/3.4.0/bin:$PATH"
 
 # Metasploit
 [[ -d /opt/metasploit-framework/bin ]] && export PATH="/opt/metasploit-framework/bin:$PATH"

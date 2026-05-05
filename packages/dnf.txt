@@ -16,3 +16,7 @@ htop
 unzip
 ca-certificates
 @development-tools
+java-21-openjdk-devel
+nodejs
+npm
+golang

@@ -23,10 +23,14 @@ brew "tree"
 brew "wget"
 brew "htop"
 
-# Language version managers / runtimes (referenced by ~/.config/zsh/20-tools.zsh)
+# Languages — pin to LTS / current stable. jenv manages JDK switching; gvm
+# (manual installer) handles per-project Go versions when needed.
 brew "jenv"
-brew "ruby@3.2"
-brew "python@3.13"
+brew "openjdk@25"      # Java 25 LTS (latest LTS, supported until 2030)
+brew "node@24"         # Node 24 LTS (Active LTS since Oct 2025)
+brew "go"              # Go has no LTS — current stable (1.26.x)
+brew "python@3.13"     # Python 3.13 (mature, broader package compat than 3.14)
+brew "ruby@3.4"        # Ruby 3.4 (latest stable; ruby@4 is too new for now)
 
 # Networking / pentest tools (referenced by ~/.config/zsh/40-darwin.zsh)
 brew "inetutils"

@@ -15,3 +15,7 @@ tree
 htop
 base-devel
 unzip
+jdk21-openjdk
+nodejs
+npm
+go
