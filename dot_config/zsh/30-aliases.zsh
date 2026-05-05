@@ -3,6 +3,30 @@
 # Aliases relying on a $PATH command resolve at use-time — a missing tool just
 # produces "command not found" when actually invoked, no startup error.
 
+# --- ls / file listing -------------------------------------------------------
+# Prefer `eza` (modern Rust ls with icons + color + git status). Fall back to
+# system ls with color flag if eza isn't installed.
+if command -v eza >/dev/null 2>&1; then
+  alias ls='eza --icons=auto --group-directories-first'
+  alias ll='eza -lah --icons=auto --group-directories-first --git'
+  alias la='eza -a --icons=auto --group-directories-first'
+  alias lt='eza --tree --icons=auto --level=2'
+  alias tree='eza --tree --icons=auto'
+else
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    alias ls='ls -G'        # BSD ls (macOS): -G enables color
+  else
+    alias ls='ls --color=auto'  # GNU ls (Linux)
+  fi
+  alias ll='ls -lah'
+  alias la='ls -A'
+fi
+
+# --- bat (cat with syntax highlighting) --------------------------------------
+if command -v bat >/dev/null 2>&1; then
+  alias cat='bat --paging=never --style=plain'
+fi
+
 # --- Directory shortcuts (replaces OMZ lib/directories.zsh) ------------------
 alias ..='cd ..'
 alias ...='cd ../..'
