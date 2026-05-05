@@ -1,0 +1,32 @@
+# Repo .gitignore — what NOT to commit to the dotfiles source.
+# (Metadata for the source git repo. chezmoi doesn't apply this to $HOME.)
+
+# OS / file manager cruft
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini
+
+# Editor swap / backup
+*.swp
+*.swo
+*.swn
+*.bak
+*~
+.netrwhist
+
+# Editor project metadata for THIS repo (don't track IDE state of dotfiles itself)
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# chezmoi local-only template data (per-machine variables — should never be tracked)
+.chezmoidata.local.yaml
+.chezmoidata.local.toml
+.chezmoidata.local.json
+
+# chezmoi runtime state (defensive — shouldn't end up in source dir)
+chezmoistate.boltdb
