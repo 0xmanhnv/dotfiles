@@ -34,10 +34,6 @@ return {
     end,
     -- Wait this long after last change before saving (debounce)
     debounce_delay = 1000,
-    -- Don't print "saved" message for every save (too noisy)
-    execution_message = {
-      enabled = false,
-    },
   },
   keys = {
     {

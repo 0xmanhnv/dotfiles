@@ -10,6 +10,9 @@ return {
     "stevearc/conform.nvim",
     event = { "BufReadPre", "BufNewFile" },
     cmd = { "ConformInfo" },
+    -- LazyVim already maps <leader>uf / <leader>uF (toggle autoformat via
+    -- vim.b.autoformat / vim.g.autoformat) and runs conform on BufWritePre,
+    -- so we don't redefine those. Keep just the manual-format key.
     keys = {
       {
         "<leader>cf",
@@ -18,28 +21,6 @@ return {
         end,
         mode = { "n", "v" },
         desc = "Format buffer / range",
-      },
-      {
-        "<leader>uf",
-        function()
-          if vim.b.disable_autoformat or vim.g.disable_autoformat then
-            vim.b.disable_autoformat = false
-            vim.g.disable_autoformat = false
-            vim.notify("Format-on-save: ON")
-          else
-            vim.b.disable_autoformat = true
-            vim.notify("Format-on-save: OFF (this buffer only)")
-          end
-        end,
-        desc = "Toggle format-on-save (buffer)",
-      },
-      {
-        "<leader>uF",
-        function()
-          vim.g.disable_autoformat = not vim.g.disable_autoformat
-          vim.notify("Format-on-save: " .. (vim.g.disable_autoformat and "OFF (global)" or "ON"))
-        end,
-        desc = "Toggle format-on-save (global)",
       },
     },
     opts = {
@@ -115,22 +96,11 @@ return {
         ["_"] = { "trim_whitespace", "trim_newlines" },
       },
 
-      -- Format-on-save with safety guards.
-      format_on_save = function(bufnr)
-        -- Per-buffer or global opt-out (toggle with <leader>uf / <leader>uF)
-        if vim.b[bufnr].disable_autoformat or vim.g.disable_autoformat then
-          return
-        end
-        -- Skip files larger than 1 MB (avoid blocking on big logs / dumps)
-        local fname = vim.api.nvim_buf_get_name(bufnr)
-        if fname ~= "" then
-          local stat = (vim.uv or vim.loop).fs_stat(fname)
-          if stat and stat.size > 1024 * 1024 then
-            return
-          end
-        end
-        return { timeout_ms = 1500, lsp_format = "fallback" }
-      end,
+      -- Note: NO format_on_save here. LazyVim already runs conform on
+      -- BufWritePre via its own format util (lazyvim/util/format.lua) and
+      -- toggles via <leader>uf / <leader>uF (vim.b.autoformat / vim.g.autoformat).
+      -- Setting opts.format_on_save would double-fire and trigger LazyVim's
+      -- "Don't set opts.format_on_save" warning.
 
       -- Per-formatter argument overrides
       formatters = {
