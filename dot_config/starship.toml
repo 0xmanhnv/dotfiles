@@ -10,7 +10,7 @@ palette = 'catppuccin_mocha'
 format = """
 $os \
 $username\
-$hostname \
+$hostname\
 $directory\
 $git_branch\
 $git_status\
@@ -43,16 +43,16 @@ Alpine = ""
 show_always = false
 style_user = "fg:lavender"
 style_root = "bold fg:red"
-format = '[$user]($style) '
+format = '[$user]($style)'
 
 [hostname]
 ssh_only = true
 style = "fg:teal"
-format = '[@$hostname]($style)'
+format = '[@$hostname]($style) '
 
 [directory]
 style = "bold fg:sky"
-format = " [$path]($style) "
+format = '[$path]($style) '
 truncation_length = 3
 truncate_to_repo = true
 truncation_symbol = "…/"
