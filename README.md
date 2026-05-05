@@ -18,11 +18,12 @@ What that does, in order:
 1. Installs the `chezmoi` binary
 2. Clones this repo into `~/.local/share/chezmoi`
 3. Runs `run_once_before_*` scripts:
-   - `01-install-packages` — Homebrew + `Brewfile` (macOS) or apt/pacman/dnf (Linux). This is what installs zsh, neovim, tmux, etc.
-   - `02-install-zsh-plugins` — clones the 3 zsh plugins (`zsh-autosuggestions`, `zsh-syntax-highlighting`, `zsh-history-substring-search`) into `~/.local/share/zsh/plugins/`. Must run after step 3a so git is available.
+   - `01-install-packages` — `brew bundle` (macOS) or apt / pacman / dnf (Linux) using the `packages/*.txt` lists. Installs zsh, neovim, tmux, eza, bat, fzf, zoxide, ripgrep, fd, jq, gh, starship, language toolchains (openjdk, node, go, python, ruby), and OS-specific extras. On Ubuntu/Debian, NodeSource is set up first so `nodejs` resolves to v24 LTS instead of the apt's old v18.
+   - `02-install-zsh-plugins` — clones 4 zsh plugins (`zsh-autosuggestions`, `fzf-tab`, `zsh-syntax-highlighting`, `zsh-history-substring-search`) into `~/.local/share/zsh/plugins/`.
+   - `03-install-rust` — runs the official rustup installer (stable toolchain). Skipped if `~/.cargo` already exists.
 4. Renders templates (OS-aware) and links every dotfile into place
 5. Runs `run_once_after_*` scripts:
-   - `02-setup-shell` — `chsh` to zsh; TPM is bootstrapped by `~/.tmux.conf` itself on first tmux launch
+   - `02-setup-shell` — `chsh` to zsh. TPM is bootstrapped by `~/.tmux.conf` itself on first tmux launch.
 
 If the machine doesn't have `git`/`curl` yet, run the bootstrap helper:
 
@@ -55,36 +56,42 @@ by the repo doesn't wipe your real hosts.
 
 ```
 .
+├── .editorconfig                      Editor defaults (indent, charset, EOL)
+├── .gitignore                         Repo metadata (OS cruft, editor swap, chezmoi local data)
+├── .github/workflows/ci.yml           shellcheck + chezmoi bootstrap on Ubuntu / Fedora / Kali
+│
 ├── scripts/
 │   ├── bootstrap.sh                   Pre-flight installer (git/curl + chezmoi)
 │   ├── backup-before-apply.sh         Snapshot files chezmoi would overwrite + migrate SSH hosts
-│   └── restore-from-backup.sh         Revert from a backup dir (counterpart to backup script)
+│   ├── restore-from-backup.sh         Revert from a backup dir (counterpart to backup script)
+│   ├── migrate-omz-to-starship.sh     One-shot OMZ → Starship migration on a live machine
+│   └── zshrc.local.example            Template for ~/.zshrc.local (per-machine overrides)
 │
 ├── Brewfile                           macOS packages (`brew bundle`)
 ├── packages/
-│   ├── apt.txt                        Debian/Ubuntu
+│   ├── apt.txt                        Debian / Ubuntu
 │   ├── pacman.txt                     Arch
 │   └── dnf.txt                        Fedora
 │
 ├── .chezmoidata.yaml                  Variables (name, email, github_user)
 ├── .chezmoiignore                     Per-OS file filters
 │
-├── dot_zshrc                          Loader: pure zsh + Starship + 3 plugins (no OMZ)
-├── dot_zshenv                         Pre-shell PATH (cargo, foundry)
+├── dot_zshrc                          Loader: pure zsh + Starship + 4 plugins (no OMZ)
+├── dot_zshenv                         Pre-shell PATH (cargo, foundry — both guarded)
 ├── dot_gitconfig.tmpl                 Git config (templated identity)
 ├── dot_tmux.conf                      tmux + auto-install TPM
 │
 ├── dot_config/
-│   ├── nvim/                          LazyVim distro
+│   ├── nvim/                          LazyVim distro + snacks dashboard (Buddha banner)
 │   ├── ghostty/config                 macOS — terminal emulator
-│   ├── starship.toml                  Prompt
+│   ├── starship.toml                  Custom Catppuccin Mocha prompt
 │   ├── zellij/config.kdl              Multiplexer (alternative to tmux)
 │   └── zsh/                           Modular shell config (see below)
 │
-├── private_dot_ssh/config.tmpl        SSH client (0600, OS-aware UseKeychain)
+├── private_dot_ssh/config.tmpl        SSH client (0600, Include config.local for hosts)
 ├── Library/Application Support/Code/User/settings.json   macOS — VS Code
 │
-└── run_once_*.sh.tmpl                 Idempotent setup scripts
+└── run_once_*.sh.tmpl                 Idempotent setup scripts (packages, plugins, rustup, chsh)
 ```
 
 ---
@@ -110,14 +117,14 @@ hidden files when browsing in a file manager.
 `~/.zshrc` is a 60-line **loader**. The real config lives in
 `~/.config/zsh/*.zsh`, sourced in lexical order:
 
-| File             | Purpose                                                   |
-| ---------------- | --------------------------------------------------------- |
-| `00-env.zsh`     | Cross-OS env vars (`HOMEBREW_NO_*`, `JAVA_TOOL_OPTIONS`)  |
-| `10-path.zsh`    | Common PATH entries (`~/.local/bin`, `~/go/bin`)          |
-| `20-tools.zsh`   | Tool init: cargo, gvm, jenv, redos                        |
-| `30-aliases.zsh` | Aliases — every file path guarded by `[[ -d ]]`           |
-| `40-darwin.zsh`  | macOS only: Homebrew Cellar globs, Android SDK, Ghostty   |
-| `40-linux.zsh`   | Linux only: Linuxbrew, snap, flatpak                      |
+| File             | Purpose                                                                                           |
+| ---------------- | ------------------------------------------------------------------------------------------------- |
+| `00-env.zsh`     | Cross-OS env vars (`HOMEBREW_NO_*`, `JAVA_TOOL_OPTIONS`, `PYTHONDONTWRITEBYTECODE`)               |
+| `10-path.zsh`    | Common PATH entries (`~/.local/bin`, `~/go/bin`) — all guarded with `[[ -d ]]`                    |
+| `20-tools.zsh`   | Tool init: cargo, gvm, jenv (eager), redos, **zoxide** (`z`), **fzf** keybindings (Ctrl-R / T / Alt-C) |
+| `30-aliases.zsh` | `ls/ll/lt` (eza), `cat` (bat), `..` `...`, `take` fn, term-title hooks, 20 git aliases            |
+| `40-darwin.zsh`  | macOS only: Homebrew Cellar globs, Android SDK, Ghostty integration                               |
+| `40-linux.zsh`   | Linux only: Linuxbrew, snap, flatpak                                                              |
 
 OS-specific files are filtered by `.chezmoiignore`, so on Linux the macOS
 file isn't even rendered to disk.
@@ -141,8 +148,12 @@ Anything truly local (work laptop API keys, employer-specific paths) goes in
   shell (~50ms startup cost, accepted as a daily-driver tool). Future tools
   with similarly slow init (rbenv/nvm/pyenv) can be lazy-loaded with the
   stub-function pattern if startup speed becomes a concern.
-- Loader uses `null_glob` so an empty `~/.config/zsh/` doesn't error.
-- Source errors in any module are surfaced to stderr, not silently swallowed.
+- Loader uses `null_glob` so an empty `~/.config/zsh/` doesn't error. Real
+  syntax errors are still printed by zsh itself with file:line, so the loader
+  doesn't wrap `source` with a custom reporter (it would false-fire on files
+  that legitimately end on a falsey conditional).
+- `compinit` cached daily — full re-build only runs if `~/.zcompdump` is older
+  than 24 hours.
 
 ---
 
@@ -188,6 +199,8 @@ chezmoi re-add ~/.config/nvim/lazy-lock.json
 | Cellar version pinning       | Auto via glob            | N/A                  |
 | Git credential helper        | `osxkeychain`            | `cache --timeout`    |
 | SSH `UseKeychain`            | Yes                      | No                   |
+| Java LTS                     | openjdk@25 (latest LTS)  | openjdk-21 (broader distro support) |
+| Node 24 LTS source           | Homebrew                 | NodeSource on Ubuntu/Debian; rolling repo on Kali/Parrot |
 
 ---
 
@@ -221,13 +234,17 @@ Useful while iterating on the source dir before pushing:
 docker run -it --rm -v "$PWD:/dotfiles:ro" ubuntu:24.04 bash -c '
   apt-get update -qq && apt-get install -y -qq curl sudo git
   sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
-  chezmoi init --source=/dotfiles
-  chezmoi apply
+  chezmoi --source=/dotfiles apply
 '
 ```
 
 This bypasses GitHub entirely — chezmoi reads source files straight from the
 mounted dir.
+
+> Pass `--source` on every chezmoi invocation rather than `chezmoi init
+> --source=DIR`. The `init` flag doesn't reliably persist `sourceDir` into
+> `~/.config/chezmoi/chezmoi.toml` when no remote URL is given, so subsequent
+> `apply` falls back to the default `~/.local/share/chezmoi`.
 
 ### What to verify after install completes
 
@@ -261,12 +278,31 @@ real macOS GUI. Options:
 
 | Layer       | Tool                                                                |
 | ----------- | ------------------------------------------------------------------- |
-| Shell       | zsh + [starship](https://starship.rs/) + 3 plugins ([zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions), [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting), [zsh-history-substring-search](https://github.com/zsh-users/zsh-history-substring-search)) — no framework |
-| Editor      | [Neovim](https://neovim.io/) + [LazyVim](https://www.lazyvim.org/)  |
-| Terminal    | [Ghostty](https://ghostty.org/) (macOS)                             |
-| Multiplexer | [tmux](https://github.com/tmux/tmux) + [TPM](https://github.com/tmux-plugins/tpm) and/or [Zellij](https://zellij.dev/) |
-| Prompt      | [Starship](https://starship.rs/)                                    |
+| Shell       | zsh + [starship](https://starship.rs/) + 4 plugins ([zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions), [fzf-tab](https://github.com/Aloxaf/fzf-tab), [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting), [zsh-history-substring-search](https://github.com/zsh-users/zsh-history-substring-search)) — no framework |
+| Editor      | [Neovim](https://neovim.io/) + [LazyVim](https://www.lazyvim.org/) + [snacks.nvim](https://github.com/folke/snacks.nvim) explorer/dashboard/picker |
+| Terminal    | [Ghostty](https://ghostty.org/) (macOS) — Catppuccin Mocha theme    |
+| Multiplexer | [tmux](https://github.com/tmux/tmux) + [TPM](https://github.com/tmux-plugins/tpm), and/or [Zellij](https://zellij.dev/) |
+| Prompt      | [Starship](https://starship.rs/) — custom Catppuccin Mocha config (info-rich, no segments) |
+| CLI tools   | [eza](https://github.com/eza-community/eza), [bat](https://github.com/sharkdp/bat), [ripgrep](https://github.com/BurntSushi/ripgrep), [fd](https://github.com/sharkdp/fd), [fzf](https://github.com/junegunn/fzf), [zoxide](https://github.com/ajeetdsouza/zoxide), [jq](https://jqlang.org/), [gh](https://cli.github.com/) |
+| Languages   | Java (openjdk@25 macOS / 21 LTS Linux) + jenv, Node 24 LTS, Go latest, Python 3.13, Ruby 3.4, Rust stable (rustup) |
 | Manager     | [chezmoi](https://www.chezmoi.io/)                                  |
+
+---
+
+## CI
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to
+`main` and on PRs:
+
+| Job                  | What it tests                                                  |
+| -------------------- | -------------------------------------------------------------- |
+| `shellcheck`         | All `scripts/*.sh` lint clean (excl. SC1090/SC1091 dynamic source) |
+| `bootstrap-ubuntu`   | Full `chezmoi apply` inside `ubuntu:24.04` Docker, then loads zsh and verifies aliases / plugins / starship / TPM |
+| `bootstrap-fedora`   | Full apply inside `fedora:latest` (dnf branch + `--skip-unavailable`) |
+| `bootstrap-kali`     | Full apply inside `kalilinux/kali-rolling` (Debian branch, NodeSource auto-skipped via `/etc/os-release` ID check) |
+
+This catches regressions like "OMZ install runs before zsh is installed" or
+"NodeSource conflicts with apt's `npm`" before they hit a real machine.
 
 ---
 
