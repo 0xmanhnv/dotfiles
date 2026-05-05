@@ -1,4 +1,5 @@
 git
+github-cli
 curl
 wget
 zsh
@@ -12,8 +13,10 @@ ripgrep
 fd
 bat
 jq
+yq
 tree
 htop
+ruby
 base-devel
 unzip
 jdk21-openjdk
