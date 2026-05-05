@@ -50,6 +50,36 @@ The backup script also extracts host entries from `~/.ssh/config` into
 `~/.ssh/config.local` (untracked) so the catch-all-only `~/.ssh/config` shipped
 by the repo doesn't wipe your real hosts.
 
+### On a Linux SERVER (lean, no language toolchains, sudo optional)
+
+The default bootstrap installs Java + Node + Go + Python + Ruby + Rust — that's
+~500 MB of dev toolchains a server doesn't need, and may need sudo for. For
+servers, jump hosts, or restricted boxes, use the lean entrypoint:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/0xmanhnv/dotfiles/main/scripts/bootstrap-server.sh | bash
+```
+
+What it does differently:
+
+| | Workstation bootstrap | Server bootstrap |
+|---|---|---|
+| Shell tools (zsh, neovim, tmux, fzf, ...) | ✓ install | ✓ install |
+| Starship + 4 zsh plugins | ✓ | ✓ (starship to `~/.local/bin/`, plugins to `~/.local/share/`) |
+| Java / Node / Go / Python / Ruby / Rust | ✓ | ✗ skipped |
+| GitHub CLI repo setup, NodeSource, rustup | ✓ | ✗ skipped |
+| `chsh` to zsh | required | best-effort, gracefully fails if denied |
+| Needs sudo? | yes | optional (degrades gracefully, useful in containers / shared servers) |
+| Distros covered | apt / pacman / dnf | apt / dnf (RHEL/Rocky too) / pacman |
+
+Internally it just runs `chezmoi init --apply --exclude=scripts` — same
+dotfile rendering, none of the heavy `run_once_*` install scripts.
+
+If you later decide you need Node/Go/etc. on that server, install manually:
+```sh
+sudo apt install nodejs golang-go default-jdk ruby
+```
+
 ---
 
 ## What's inside
@@ -62,6 +92,7 @@ by the repo doesn't wipe your real hosts.
 │
 ├── scripts/
 │   ├── bootstrap.sh                   Pre-flight installer (git/curl + chezmoi)
+│   ├── bootstrap-server.sh            Lean entrypoint for Linux servers (no toolchains, sudo optional)
 │   ├── backup-before-apply.sh         Snapshot files chezmoi would overwrite + migrate SSH hosts
 │   ├── restore-from-backup.sh         Revert from a backup dir (counterpart to backup script)
 │   ├── migrate-omz-to-starship.sh     One-shot OMZ → Starship migration on a live machine
