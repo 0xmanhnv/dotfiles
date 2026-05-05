@@ -1,11 +1,50 @@
+-- Buddha Bless dashboard header
+local function get_header()
+  return table.concat({
+    "                   _oo0oo_                   ",
+    "                  o8888888o                  ",
+    "                  88\" . \"88                  ",
+    "                  (| -_- |)                  ",
+    "                  0\\  =  /0                  ",
+    "                ___/`---'\\___                ",
+    "              .' \\|     |// '.              ",
+    "             / \\|||  :  |||// \\             ",
+    "            / _||||| -:- |||||- \\            ",
+    "           |   | \\  -  /// |   |            ",
+    "           | \\_|  ''\\---/''  |_/ |           ",
+    "           \\  .-\\__  '-'  ___/-. /           ",
+    "         ___'. .'  /--.--\\  `. .'___         ",
+    "      .\"\" '<  `.___\\_<|>_/___.' >' \"\".      ",
+    "     | | :  `- \\`.;`\\ _ /`;.`/ - ` : | |     ",
+    "     \\  \\ `_.   \\_ __\\ /__ _/   .-` /  /     ",
+    " =====`-.____`.___ \\_____/___.-`___.-'=====  ",
+    "                   `=---='                   ",
+    "                                             ",
+    "      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      ",
+    "           Buddha Bless: No Bugs            ",
+    "      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      ",
+  }, "\n")
+end
+
 return {
   "folke/snacks.nvim",
   opts = {
+    dashboard = {
+      enabled = true,
+      preset = {
+        header = get_header(),
+      },
+      sections = {
+        { section = "header" },
+        { section = "keys", gap = 1, padding = 1 },
+        { section = "startup" },
+      },
+    },
     picker = {
       sources = {
         explorer = {
-          hidden = true, -- show dotfiles (default is already true)
-          ignored = false, -- hide gitignored files (default is false)
+          hidden = true,   -- show dotfiles
+          ignored = false, -- hide gitignored files
         },
       },
     },
