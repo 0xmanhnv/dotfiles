@@ -7,6 +7,20 @@
 # GVM (Go Version Manager)
 [[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"
 
+# gvm overrides `cd` and bubbles its internal function name into error
+# messages ("__gvm_oldcd:cd: no such file or directory: foo"). Re-wrap
+# `cd` to fall through to the builtin with a clean error, but still call
+# __gvm_check on success so .go-version auto-switching keeps working.
+if (( $+functions[__gvm_oldcd] )); then
+  cd() {
+    if ! builtin cd "$@" 2>/dev/null; then
+      print -u2 "cd: no such file or directory: ${*:-(none)}"
+      return 1
+    fi
+    (( $+functions[__gvm_check] )) && __gvm_check
+  }
+fi
+
 # jenv (Java) — eager init so JAVA_HOME auto-switches on `cd` in every shell.
 # Costs ~50ms at startup; chosen over lazy-load because Java is a daily tool
 # and per-project JAVA_HOME hooks need to be active immediately.
