@@ -114,7 +114,8 @@ sudo apt install nodejs golang-go default-jdk ruby   # Debian/Ubuntu/Kali
 │
 ├── dot_zshrc                          Loader: pure zsh + Starship + 4 plugins (no OMZ)
 ├── dot_zshenv                         Pre-shell PATH (cargo, foundry — both guarded)
-├── dot_gitconfig.tmpl                 Git config (templated identity)
+├── dot_gitconfig.tmpl                 Git config (templated identity, points at ~/.gitignore_global)
+├── dot_gitignore_global               Patterns ignored in EVERY git repo (.DS_Store, IDE state, *.local, ...)
 ├── dot_tmux.conf                      tmux + auto-install TPM
 │
 ├── dot_config/
@@ -189,6 +190,22 @@ Anything truly local (work laptop API keys, employer-specific paths) goes in
   that legitimately end on a falsey conditional).
 - `compinit` cached daily — full re-build only runs if `~/.zcompdump` is older
   than 24 hours.
+- `40-darwin.zsh` detects `BREW_PREFIX` (`/opt/homebrew` on Apple Silicon,
+  `/usr/local` on Intel) so all Cellar/opt globs work on both arches.
+
+### fzf-tab UX
+
+Tab completion is replaced by an fzf picker with type-aware preview:
+
+| Trigger              | Preview                                   |
+| -------------------- | ----------------------------------------- |
+| `cd <Tab>`, `z <Tab>` | `eza` listing of the candidate directory  |
+| Generic file complete | `bat` line-range render, falls back to eza |
+| `kill <Tab>`, `ps <Tab>` | `ps -o pid,cmd -p $word`               |
+| `git add/diff/restore` | live `git diff --color` preview         |
+| `git checkout/switch/branch` | `git log --oneline --graph -20`   |
+
+Tab key bound to `accept` so a single tab confirms.
 
 ---
 
@@ -224,10 +241,12 @@ chezmoi re-add ~/.config/nvim/lazy-lock.json
 
 ## OS-specific behavior
 
-|                              | macOS                    | Linux                |
-| ---------------------------- | ------------------------ | -------------------- |
-| Package manager              | Homebrew (`Brewfile`)    | apt / pacman / dnf   |
-| Default terminal             | Ghostty (config tracked) | (your choice)        |
+|                              | macOS                                  | Linux                |
+| ---------------------------- | -------------------------------------- | -------------------- |
+| CPU arch                     | Apple Silicon + Intel (both supported) | x86_64 / arm64       |
+| Brew prefix                  | `/opt/homebrew` or `/usr/local` (auto) | (Linuxbrew opt-in)   |
+| Package manager              | Homebrew (`Brewfile`)                  | apt / pacman / dnf   |
+| Default terminal             | Ghostty (config tracked)               | (your choice)        |
 | `40-darwin.zsh`              | Loaded                   | Skipped              |
 | `40-linux.zsh`               | Skipped                  | Loaded               |
 | Cellar version pinning       | Auto via glob            | N/A                  |
