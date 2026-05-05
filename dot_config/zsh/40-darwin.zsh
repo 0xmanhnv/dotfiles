@@ -4,38 +4,45 @@
 # package instead of hard-coding versions. When you `brew upgrade`, paths
 # auto-update without editing this file.
 
-# Homebrew (Apple Silicon first, fall back to Intel)
+# Detect Brew prefix: Apple Silicon = /opt/homebrew, Intel = /usr/local.
+# All paths below resolve through $BREW_PREFIX so the file works on both.
 if [[ -x /opt/homebrew/bin/brew ]]; then
-  eval "$(/opt/homebrew/bin/brew shellenv)"
+  BREW_PREFIX=/opt/homebrew
 elif [[ -x /usr/local/bin/brew ]]; then
-  eval "$(/usr/local/bin/brew shellenv)"
+  BREW_PREFIX=/usr/local
+fi
+
+if [[ -n "${BREW_PREFIX:-}" ]]; then
+  eval "$($BREW_PREFIX/bin/brew shellenv)"
 fi
 
 # Helper: prepend the bin/ of the latest version of a Cellar package, if installed.
 _prepend_cellar_latest() {
   local pkg="$1"
   local latest
-  latest=$(/bin/ls -d /opt/homebrew/Cellar/"$pkg"/*/bin 2>/dev/null | sort -V | tail -1)
+  latest=$(/bin/ls -d "$BREW_PREFIX/Cellar/$pkg"/*/bin 2>/dev/null | sort -V | tail -1)
   [[ -d "$latest" ]] && export PATH="$latest:$PATH"
 }
 
 # Pinned-version Cellar tools (preferred over default brew shims)
-for pkg in inetutils nginx cloudtrail-cli binutils binwalk rlwrap bison \
-           freerdp wireguard-tools gemini-cli neovim 'ruby@3.4'; do
-  _prepend_cellar_latest "$pkg"
-done
+if [[ -n "${BREW_PREFIX:-}" ]]; then
+  for pkg in inetutils nginx cloudtrail-cli binutils binwalk rlwrap bison \
+             freerdp wireguard-tools gemini-cli neovim 'ruby@3.4'; do
+    _prepend_cellar_latest "$pkg"
+  done
 
-# Special-case rlwrap (its Cellar layout has bin under root, not under bin/)
-for d in /opt/homebrew/Cellar/rlwrap/*/; do
-  [[ -d "$d" ]] && export PATH="${d%/}:$PATH" && break
-done
-unset -f _prepend_cellar_latest
+  # Special-case rlwrap (its Cellar layout has bin under root, not under bin/)
+  for d in "$BREW_PREFIX/Cellar/rlwrap"/*/; do
+    [[ -d "$d" ]] && export PATH="${d%/}:$PATH" && break
+  done
 
-# Homebrew opt symlinks (keg-only formulas need explicit PATH)
-[[ -d /opt/homebrew/opt/python@3.13/bin ]] && export PATH="/opt/homebrew/opt/python@3.13/bin:$PATH"
-[[ -d /opt/homebrew/opt/openjdk@25/bin ]]  && export PATH="/opt/homebrew/opt/openjdk@25/bin:$PATH"
-[[ -d /opt/homebrew/opt/node@24/bin ]]     && export PATH="/opt/homebrew/opt/node@24/bin:$PATH"
-[[ -d /opt/homebrew/opt/openvpn/sbin ]]    && export PATH="/opt/homebrew/opt/openvpn/sbin:$PATH"
+  # Homebrew opt symlinks (keg-only formulas need explicit PATH)
+  [[ -d "$BREW_PREFIX/opt/python@3.13/bin" ]] && export PATH="$BREW_PREFIX/opt/python@3.13/bin:$PATH"
+  [[ -d "$BREW_PREFIX/opt/openjdk@25/bin" ]]  && export PATH="$BREW_PREFIX/opt/openjdk@25/bin:$PATH"
+  [[ -d "$BREW_PREFIX/opt/node@24/bin" ]]     && export PATH="$BREW_PREFIX/opt/node@24/bin:$PATH"
+  [[ -d "$BREW_PREFIX/opt/openvpn/sbin" ]]    && export PATH="$BREW_PREFIX/opt/openvpn/sbin:$PATH"
+fi
+unset -f _prepend_cellar_latest 2>/dev/null
 
 # Ruby gems (user) — bumped to ruby 3.4
 [[ -d "$HOME/.gem/ruby/3.4.0/bin" ]] && export PATH="$HOME/.gem/ruby/3.4.0/bin:$PATH"

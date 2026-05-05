@@ -1,0 +1,46 @@
+# ~/.gitignore_global — applied to every git repo on this machine via
+# `git config --global core.excludesfile`.
+# Catches OS / editor / IDE noise so it doesn't have to be re-listed in each
+# project's .gitignore.
+
+# OS / file manager cruft
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Editor swap / backup
+*.swp
+*.swo
+*.swn
+*~
+*.bak
+*.tmp
+.netrwhist
+
+# Editor / IDE workspace state (not source-of-truth, varies per machine)
+.vscode/
+.idea/
+*.iml
+.fleet/
+.zed/
+.helix/
+.nova/
+
+# Local-only env / secrets (per-project .env should stay; *.local convention)
+*.local
+.env.local
+.envrc
+
+# Build / cache scratch
+*.log
+.cache/
+
+# Direnv / mise / asdf state
+.direnv/
+.tool-versions.local

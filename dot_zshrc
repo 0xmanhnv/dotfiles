@@ -82,8 +82,30 @@ ZSH_PLUGINS_DIR="${ZSH_PLUGINS_DIR:-$HOME/.local/share/zsh/plugins}"
 [[ -s "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] && \
   source "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
 
-[[ -s "$ZSH_PLUGINS_DIR/fzf-tab/fzf-tab.plugin.zsh" ]] && \
+if [[ -s "$ZSH_PLUGINS_DIR/fzf-tab/fzf-tab.plugin.zsh" ]]; then
   source "$ZSH_PLUGINS_DIR/fzf-tab/fzf-tab.plugin.zsh"
+
+  # fzf-tab UX styling — preview cd targets / files / processes / git refs.
+  # Falls back gracefully when the preview tool (eza, bat) isn't installed.
+  zstyle ':fzf-tab:*' fzf-bindings 'tab:accept'
+  zstyle ':fzf-tab:*' use-fzf-default-opts yes
+  zstyle ':fzf-tab:*' switch-group ',' '.'
+  zstyle ':completion:*:descriptions' format '[%d]'
+  zstyle ':fzf-tab:complete:cd:*' \
+    fzf-preview 'eza -1 --color=always --icons "$realpath" 2>/dev/null || ls -1 "$realpath"'
+  zstyle ':fzf-tab:complete:__zoxide_z:*' \
+    fzf-preview 'eza -1 --color=always --icons "$realpath" 2>/dev/null || ls -1 "$realpath"'
+  zstyle ':fzf-tab:complete:*:*' \
+    fzf-preview 'bat --color=always --line-range :50 "$realpath" 2>/dev/null \
+                 || eza -1 --color=always --icons "$realpath" 2>/dev/null \
+                 || cat "$realpath" 2>/dev/null'
+  zstyle ':fzf-tab:complete:(kill|ps):argument-rest' \
+    fzf-preview 'ps -o pid,cmd -p $word 2>/dev/null'
+  zstyle ':fzf-tab:complete:git-(add|diff|restore):*' \
+    fzf-preview 'git diff --color=always -- "$realpath" 2>/dev/null | head -200'
+  zstyle ':fzf-tab:complete:git-(checkout|switch|branch):*' \
+    fzf-preview 'git log --color=always --oneline --graph -20 "$word" 2>/dev/null'
+fi
 
 [[ -s "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && \
   source "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
