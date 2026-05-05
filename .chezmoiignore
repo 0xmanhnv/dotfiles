@@ -1,8 +1,6 @@
 README.md
 LICENSE
-bootstrap.sh
-backup-before-apply.sh
-restore-from-backup.sh
+scripts/**
 Brewfile
 packages/**
 .gitignore

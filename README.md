@@ -27,8 +27,27 @@ What that does, in order:
 If the machine doesn't have `git`/`curl` yet, run the bootstrap helper:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/0xmanhnv/dotfiles/main/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/0xmanhnv/dotfiles/main/scripts/bootstrap.sh | bash
 ```
+
+### On an EXISTING machine that already has its own config
+
+`chezmoi apply` will overwrite files like `~/.zshrc`, `~/.gitconfig`, and
+`~/.ssh/config` without backing up. Use the helper scripts:
+
+```sh
+chezmoi init --source=$(pwd)              # point chezmoi at your local clone
+bash scripts/backup-before-apply.sh       # snapshot files + migrate SSH hosts
+chezmoi diff                              # review what changes
+chezmoi apply --exclude=scripts           # skip run_once if packages already installed
+
+# If something breaks, in another terminal:
+bash scripts/restore-from-backup.sh       # revert from latest backup
+```
+
+The backup script also extracts host entries from `~/.ssh/config` into
+`~/.ssh/config.local` (untracked) so the catch-all-only `~/.ssh/config` shipped
+by the repo doesn't wipe your real hosts.
 
 ---
 
@@ -36,11 +55,16 @@ curl -fsSL https://raw.githubusercontent.com/0xmanhnv/dotfiles/main/bootstrap.sh
 
 ```
 .
-├── bootstrap.sh                       Pre-flight installer (git/curl + chezmoi)
+├── scripts/
+│   ├── bootstrap.sh                   Pre-flight installer (git/curl + chezmoi)
+│   ├── backup-before-apply.sh         Snapshot files chezmoi would overwrite + migrate SSH hosts
+│   └── restore-from-backup.sh         Revert from a backup dir (counterpart to backup script)
+│
 ├── Brewfile                           macOS packages (`brew bundle`)
 ├── packages/
 │   ├── apt.txt                        Debian/Ubuntu
-│   └── pacman.txt                     Arch
+│   ├── pacman.txt                     Arch
+│   └── dnf.txt                        Fedora
 │
 ├── .chezmoidata.yaml                  Variables (name, email, github_user)
 ├── .chezmoiignore                     Per-OS file filters
