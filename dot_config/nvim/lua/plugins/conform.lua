@@ -73,17 +73,12 @@ return {
         -- JVM
         java = { "google-java-format" },
         kotlin = { "ktlint" },
-        scala = { "scalafmt" },
-        groovy = { "npm-groovy-lint" },
 
-        -- Other dev languages
-        ruby = { "rubocop", "rufo", stop_after_first = true },
+        -- Other dev languages (rarely-used: elixir/haskell/ocaml/scala/groovy/zig/nix
+        -- removed — re-add if you need them)
+        ruby = { "rubocop", stop_after_first = true },
         php = { "php_cs_fixer" },
         sql = { "sqlfluff" },
-        nix = { "alejandra" },
-        elixir = { "mix" },
-        haskell = { "fourmolu", "ormolu", stop_after_first = true },
-        ocaml = { "ocamlformat" },
         proto = { "buf" },
 
         -- Infra / DevOps / SecOps
@@ -171,7 +166,6 @@ return {
         "rubocop",
         "php-cs-fixer",
         "sqlfluff",
-        "alejandra",
         "buf",
         "yamlfmt",
         "xmlformatter",
