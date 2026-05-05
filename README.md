@@ -79,6 +79,16 @@ What `--minimal` skips:
 | NodeSource + GitHub CLI repos      | ✓    | ✗       |
 | rustup install                     | ✓    | ✗       |
 | `chsh` to zsh                      | ✓    | ✗       |
+| GUI configs (Ghostty)              | ✓    | ✗ skipped via `profile = "server"` in chezmoi.toml |
+
+`--minimal` also writes `~/.config/chezmoi/chezmoi.toml` with `profile = "server"`
+so subsequent `chezmoi apply` keeps skipping desktop-only configs. To later
+upgrade a server to a desktop profile (rare on a server, but possible):
+
+```sh
+# Edit ~/.config/chezmoi/chezmoi.toml — change profile = "desktop"
+chezmoi apply
+```
 
 Internally `--minimal` just adds `--exclude=scripts` to `chezmoi init --apply`,
 so all `run_once_*` scripts are skipped. Add toolchains later if needed:

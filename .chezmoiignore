@@ -12,3 +12,9 @@ packages/**
 {{- if ne .chezmoi.os "linux" }}
 .config/zsh/40-linux.zsh
 {{- end }}
+
+# Server profile (headless) — skip GUI / desktop-only configs.
+# Override per-machine: edit ~/.config/chezmoi/chezmoi.toml → [data] profile = "server"
+{{- if eq .profile "server" }}
+.config/ghostty/**
+{{- end }}

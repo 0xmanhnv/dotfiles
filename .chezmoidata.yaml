@@ -1,3 +1,14 @@
 name: "Nguyen Manh"
 email: "0xmanhnv@gmail.com"
 github_user: "0xmanhnv"
+
+# Machine profile — controls which GUI/desktop-only configs apply.
+# Override per-machine in ~/.config/chezmoi/chezmoi.toml:
+#
+#   [data]
+#   profile = "server"
+#
+# Values:
+#   desktop  - default; render all configs including GUI (Ghostty, fonts, ...)
+#   server   - headless; skip GUI configs (Ghostty, etc.)
+profile: "desktop"

@@ -78,6 +78,23 @@ else
 fi
 
 # --- Install chezmoi + init+apply ------------------------------------------
+
+# In MINIMAL mode, mark this machine as "server" so chezmoiignore drops
+# GUI-only configs (Ghostty, etc.) in addition to skipping run_once installers.
+if [[ "$MINIMAL" == "1" ]]; then
+  mkdir -p "$HOME/.config/chezmoi"
+  if [[ ! -f "$HOME/.config/chezmoi/chezmoi.toml" ]]; then
+    cat > "$HOME/.config/chezmoi/chezmoi.toml" <<'EOF'
+# Set by bootstrap.sh --minimal; tells chezmoi this is a headless / server-
+# style machine so GUI configs (Ghostty) and similar are filtered via
+# .chezmoiignore.
+[data]
+profile = "server"
+EOF
+    echo "==> Wrote ~/.config/chezmoi/chezmoi.toml with profile=server"
+  fi
+fi
+
 echo "==> Installing chezmoi and applying dotfiles"
 if [[ "$MINIMAL" == "1" ]]; then
   sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --exclude=scripts "$GITHUB_USER"
