@@ -65,73 +65,60 @@ truncation_symbol = "…/"
 "Developer" = "󰲋 "
 
 [git_branch]
-symbol = ""
 style = "fg:mauve"
-format = '\[[on $symbol $branch]($style)\] '
+format = '\[[on $branch]($style)\] '
 
 [git_status]
 style = "fg:peach"
 format = '(\[[$all_status$ahead_behind]($style)\] )'
 
 [nodejs]
-symbol = ""
 style = "fg:green"
-format = '\[[via $symbol $version]($style)\] '
+format = '\[[via Node $version]($style)\] '
 
 [bun]
-symbol = ""
 style = "fg:flamingo"
-format = '\[[via $symbol $version]($style)\] '
+format = '\[[via Bun $version]($style)\] '
 
 [python]
-symbol = ""
 style = "fg:yellow"
-format = '\[[via $symbol $version$virtualenv]($style)\] '
+format = '\[[via Python $version$virtualenv]($style)\] '
 
 [rust]
-symbol = ""
 style = "fg:peach"
-format = '\[[via $symbol $version]($style)\] '
+format = '\[[via Rust $version]($style)\] '
 
 [golang]
-symbol = ""
 style = "fg:teal"
-format = '\[[via $symbol $version]($style)\] '
+format = '\[[via Go $version]($style)\] '
 
 [java]
-symbol = " "
 style = "fg:red"
-format = '\[[via $symbol$version]($style)\] '
+format = '\[[via Java $version]($style)\] '
 
 [kotlin]
-symbol = ""
 style = "fg:lavender"
-format = '\[[via $symbol $version]($style)\] '
+format = '\[[via Kotlin $version]($style)\] '
 
 [haskell]
-symbol = ""
 style = "fg:mauve"
-format = '\[[via $symbol $version]($style)\] '
+format = '\[[via Haskell $version]($style)\] '
 
 [php]
-symbol = ""
 style = "fg:lavender"
-format = '\[[via $symbol $version]($style)\] '
+format = '\[[via PHP $version]($style)\] '
 
 [c]
-symbol = " "
 style = "fg:green"
-format = '\[[via $symbol$version]($style)\] '
+format = '\[[via C $version]($style)\] '
 
 [docker_context]
-symbol = ""
 style = "fg:blue"
-format = '\[[via $symbol $context]($style)\] '
+format = '\[[via Docker $context]($style)\] '
 
 [conda]
-symbol = " "
 style = "fg:sapphire"
-format = '\[[via $symbol$environment]($style)\] '
+format = '\[[via Conda $environment]($style)\] '
 ignore_base = false
 
 [cmd_duration]
