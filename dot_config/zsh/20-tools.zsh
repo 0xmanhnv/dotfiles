@@ -17,3 +17,12 @@ fi
 
 # RedOS wrappers
 [[ -s "$HOME/.redosrc" ]] && source "$HOME/.redosrc"
+
+# zoxide — smarter `cd` (z <fragment> jumps to most-frecent matching dir)
+command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
+
+# fzf shell integration (Ctrl-R history, Ctrl-T files, Alt-C cd).
+# `fzf --zsh` requires fzf 0.48+; falls back gracefully on older versions.
+if command -v fzf >/dev/null 2>&1; then
+  source <(fzf --zsh) 2>/dev/null || true
+fi

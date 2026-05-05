@@ -74,13 +74,16 @@ export PATH="$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH"
 # === Plugins ===
 # Order matters:
 #   1. zsh-autosuggestions    — must come before syntax-highlighting
-#   2. zsh-syntax-highlighting — must come BEFORE history-substring-search
-#                                (per its README)
-#   3. zsh-history-substring-search — and bind keys after sourcing
+#   2. fzf-tab                — must come BEFORE syntax-highlighting (its README)
+#   3. zsh-syntax-highlighting
+#   4. zsh-history-substring-search — must come AFTER syntax-highlighting
 ZSH_PLUGINS_DIR="${ZSH_PLUGINS_DIR:-$HOME/.local/share/zsh/plugins}"
 
 [[ -s "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] && \
   source "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
+
+[[ -s "$ZSH_PLUGINS_DIR/fzf-tab/fzf-tab.plugin.zsh" ]] && \
+  source "$ZSH_PLUGINS_DIR/fzf-tab/fzf-tab.plugin.zsh"
 
 [[ -s "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && \
   source "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
