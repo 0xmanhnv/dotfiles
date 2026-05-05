@@ -31,6 +31,9 @@ If the machine doesn't have `git`/`curl` yet, run the bootstrap helper:
 curl -fsSL https://raw.githubusercontent.com/0xmanhnv/dotfiles/main/scripts/bootstrap.sh | bash
 ```
 
+> **On a server, jump host, or restricted account?** Skip the heavy language
+> toolchain install with `--minimal` — see [Full vs Minimal mode](#full-vs-minimal-mode).
+
 ### On an EXISTING machine that already has its own config
 
 `chezmoi apply` will overwrite files like `~/.zshrc`, `~/.gitconfig`, and
