@@ -2,8 +2,11 @@
 	name = {{ .name }}
 	email = {{ .email }}
 
+# Use HTTPS for clone/fetch (no auth needed for public repos), SSH for push.
+# `insteadOf` would force SSH everywhere and break tools that auto-clone via
+# HTTPS (e.g., lazy.nvim) on machines without an SSH key configured yet.
 [url "git@github.com:"]
-	insteadOf = https://github.com/
+	pushInsteadOf = https://github.com/
 
 [init]
 	defaultBranch = main

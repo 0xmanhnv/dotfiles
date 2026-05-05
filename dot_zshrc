@@ -49,11 +49,13 @@ plugins=(git zsh-autosuggestions zsh-syntax-highlighting history-substring-searc
 
 # === Modular config ===
 # Anonymous function so `null_glob` is local: empty glob is silently skipped.
-# Errors during source are surfaced (instead of silently breaking subsequent files).
+# Real syntax/runtime errors are still printed by zsh itself with file:line,
+# so we don't wrap source with a custom error reporter (which would false-fire
+# on files that legitimately end on a falsey conditional).
 () {
   setopt local_options null_glob
   for f in "$HOME/.config/zsh/"*.zsh; do
-    source "$f" || print -u2 "zshrc: error sourcing ${f/#$HOME/~}"
+    source "$f"
   done
 }
 
