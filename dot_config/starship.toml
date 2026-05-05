@@ -65,83 +65,83 @@ truncation_symbol = "…/"
 [git_branch]
 symbol = ""
 style = "fg:mauve"
-format = 'on [$symbol $branch]($style) '
+format = '\[[$symbol $branch]($style)\] '
 
 [git_status]
 style = "fg:peach"
-format = '([\[$all_status$ahead_behind\]]($style) )'
+format = '(\[[$all_status$ahead_behind]($style)\] )'
 
 [nodejs]
 symbol = ""
 style = "fg:green"
-format = 'via [$symbol $version]($style) '
+format = '\[[$symbol $version]($style)\] '
 
 [bun]
 symbol = ""
 style = "fg:flamingo"
-format = 'via [$symbol $version]($style) '
+format = '\[[$symbol $version]($style)\] '
 
 [python]
 symbol = ""
 style = "fg:yellow"
-format = 'via [$symbol $version$virtualenv]($style) '
+format = '\[[$symbol $version$virtualenv]($style)\] '
 
 [rust]
 symbol = ""
 style = "fg:peach"
-format = 'via [$symbol $version]($style) '
+format = '\[[$symbol $version]($style)\] '
 
 [golang]
 symbol = ""
 style = "fg:teal"
-format = 'via [$symbol $version]($style) '
+format = '\[[$symbol $version]($style)\] '
 
 [java]
 symbol = " "
 style = "fg:red"
-format = 'via [$symbol$version]($style) '
+format = '\[[$symbol$version]($style)\] '
 
 [kotlin]
 symbol = ""
 style = "fg:lavender"
-format = 'via [$symbol $version]($style) '
+format = '\[[$symbol $version]($style)\] '
 
 [haskell]
 symbol = ""
 style = "fg:mauve"
-format = 'via [$symbol $version]($style) '
+format = '\[[$symbol $version]($style)\] '
 
 [php]
 symbol = ""
 style = "fg:lavender"
-format = 'via [$symbol $version]($style) '
+format = '\[[$symbol $version]($style)\] '
 
 [c]
 symbol = " "
 style = "fg:green"
-format = 'via [$symbol$version]($style) '
+format = '\[[$symbol$version]($style)\] '
 
 [docker_context]
 symbol = ""
 style = "fg:blue"
-format = 'via [$symbol $context]($style) '
+format = '\[[$symbol $context]($style)\] '
 
 [conda]
 symbol = " "
 style = "fg:sapphire"
-format = '[$symbol$environment]($style) '
+format = '\[[$symbol$environment]($style)\] '
 ignore_base = false
 
 [cmd_duration]
 min_time = 2000
 style = "fg:yellow"
-format = 'took [$duration]($style) '
+format = '\[[$duration]($style)\] '
 
 [time]
 disabled = false
 time_format = "%H:%M"
 style = "fg:overlay1"
-format = '[󰥔 $time]($style)'
+format = '\[[󰥔 $time]($style)\]'
 
 [line_break]
 disabled = false
