@@ -24,3 +24,4 @@ java-latest-openjdk-devel
 nodejs
 npm
 golang
+ghostscript

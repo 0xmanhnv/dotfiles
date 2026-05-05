@@ -22,3 +22,4 @@ ca-certificates
 openjdk-21-jdk
 nodejs
 golang-go
+ghostscript

@@ -22,6 +22,7 @@ brew "yq"
 brew "tree"
 brew "wget"
 brew "htop"
+brew "ghostscript"     # Used by snacks.nvim image rendering for PDF preview
 
 # Languages — pin to LTS / current stable. jenv manages JDK switching; gvm
 # (manual installer) handles per-project Go versions when needed.
@@ -58,3 +59,8 @@ cask "font-jetbrains-mono-nerd-font"
 #   - Sliver C2   https://github.com/BishopFox/sliver
 #   - pdtm        https://github.com/projectdiscovery/pdtm
 #   - Android SDK via Android Studio
+#
+# Optional snacks.nvim image-rendering deps (skipped — heavy installs):
+#   brew "tectonic"           # LaTeX math rendering (~200 MB)
+#   brew "mermaid-cli"        # Mermaid diagrams (pulls Chromium ~150 MB)
+#                             # or: npm install -g @mermaid-js/mermaid-cli
