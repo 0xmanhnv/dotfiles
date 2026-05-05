@@ -36,12 +36,10 @@ jobs:
             # Install chezmoi binary
             sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
 
-            # Tell chezmoi where the source dir lives (avoids the default
-            # ~/.local/share/chezmoi path).
-            mkdir -p ~/.config/chezmoi
-            printf "sourceDir = \"/dotfiles\"\n" > ~/.config/chezmoi/chezmoi.toml
-
-            chezmoi apply --verbose
+            # --source flag on every invocation bypasses the need for a config
+            # file and avoids "chezmoi init --source=DIR" not persisting the
+            # source path the way you would expect.
+            chezmoi --source=/dotfiles apply --verbose
 
             echo
             echo "===== POST-APPLY VERIFICATION ====="
@@ -75,10 +73,7 @@ jobs:
 
             sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
 
-            mkdir -p ~/.config/chezmoi
-            printf "sourceDir = \"/dotfiles\"\n" > ~/.config/chezmoi/chezmoi.toml
-
-            chezmoi apply --verbose
+            chezmoi --source=/dotfiles apply --verbose
 
             zsh -lic "type gst >/dev/null && echo zsh-OK; exit"
           '
