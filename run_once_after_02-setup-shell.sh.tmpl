@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# TPM is installed by dot_tmux.conf's own bootstrap block on first tmux launch
+# (see the `if "test ! -d ~/.tmux/plugins/tpm" ...` line at the bottom of that
+# file), so we don't duplicate it here.
+set -euo pipefail
+
+# Set zsh as default shell
+ZSH_PATH="$(command -v zsh || true)"
+if [[ -n "$ZSH_PATH" && "$SHELL" != "$ZSH_PATH" ]]; then
+  echo "==> Changing default shell to zsh"
+  if ! grep -qx "$ZSH_PATH" /etc/shells 2>/dev/null; then
+    echo "$ZSH_PATH" | sudo tee -a /etc/shells >/dev/null
+  fi
+  chsh -s "$ZSH_PATH" || true
+fi

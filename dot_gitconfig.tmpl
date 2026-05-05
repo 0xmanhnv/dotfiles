@@ -1,0 +1,55 @@
+[user]
+	name = {{ .name }}
+	email = {{ .email }}
+
+[url "git@github.com:"]
+	insteadOf = https://github.com/
+
+[init]
+	defaultBranch = main
+
+[pull]
+	rebase = true
+
+[push]
+	default = current
+	autoSetupRemote = true
+
+[fetch]
+	prune = true
+
+[core]
+	editor = nvim
+	pager = less -FRX
+
+[color]
+	ui = auto
+
+[diff]
+	algorithm = histogram
+	colorMoved = default
+
+[merge]
+	conflictstyle = zdiff3
+
+[rebase]
+	autoStash = true
+
+[alias]
+	st = status -sb
+	co = checkout
+	br = branch
+	ci = commit
+	cm = commit -m
+	lg = log --oneline --graph --decorate --all
+	last = log -1 HEAD --stat
+	unstage = reset HEAD --
+	amend = commit --amend --no-edit
+
+{{ if eq .chezmoi.os "darwin" -}}
+[credential]
+	helper = osxkeychain
+{{ else -}}
+[credential]
+	helper = cache --timeout=3600
+{{- end }}

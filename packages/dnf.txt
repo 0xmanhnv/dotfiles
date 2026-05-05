@@ -1,0 +1,16 @@
+git
+curl
+wget
+zsh
+neovim
+tmux
+fzf
+ripgrep
+fd-find
+bat
+jq
+tree
+htop
+unzip
+ca-certificates
+@development-tools

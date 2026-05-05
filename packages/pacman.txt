@@ -1,0 +1,15 @@
+git
+curl
+wget
+zsh
+neovim
+tmux
+fzf
+ripgrep
+fd
+bat
+jq
+tree
+htop
+base-devel
+unzip

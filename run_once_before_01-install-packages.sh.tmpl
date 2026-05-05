@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{{ if eq .chezmoi.os "darwin" -}}
+echo "==> Installing Homebrew packages"
+if ! command -v brew >/dev/null 2>&1; then
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+if [[ "$(uname -m)" == "arm64" ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+else
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
+
+brew bundle --file="{{ .chezmoi.sourceDir }}/Brewfile"
+{{ else if eq .chezmoi.os "linux" -}}
+echo "==> Installing Linux packages"
+if [[ -f /etc/debian_version ]]; then
+  sudo apt-get update
+  xargs -a "{{ .chezmoi.sourceDir }}/packages/apt.txt" sudo apt-get install -y
+elif [[ -f /etc/arch-release ]]; then
+  sudo pacman -Sy --noconfirm --needed $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/pacman.txt" | tr '\n' ' ')
+elif [[ -f /etc/fedora-release ]]; then
+  sudo dnf install -y $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/dnf.txt" | tr '\n' ' ')
+fi
+{{- end }}

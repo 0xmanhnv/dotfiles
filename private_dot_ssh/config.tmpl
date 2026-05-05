@@ -1,0 +1,24 @@
+# Host-specific entries (internal IPs, custom IdentityFiles, work-only hosts)
+# live in ~/.ssh/config.local, which is NOT tracked by chezmoi. Create it on
+# each machine with your real hosts. Include comes FIRST so per-host
+# directives win over the catch-all below (ssh_config "first match wins").
+#
+# Example ~/.ssh/config.local:
+#
+#   Host myserver
+#       HostName 10.0.0.5
+#       User admin
+#       IdentityFile ~/.ssh/id_ed25519
+#
+# Missing config.local is non-fatal on OpenSSH 7.3+ (silently skipped).
+Include config.local
+
+# Catch-all secure defaults — applied to any host not matched in config.local.
+Host *
+	AddKeysToAgent yes
+{{- if eq .chezmoi.os "darwin" }}
+	UseKeychain yes
+{{- end }}
+	ServerAliveInterval 60
+	ServerAliveCountMax 3
+	HashKnownHosts yes
