@@ -1,8 +1,0 @@
-{
-    "containers.containerClient": "com.microsoft.visualstudio.containers.docker",
-    "containers.orchestratorClient": "com.microsoft.visualstudio.orchestrators.dockercompose",
-    "redhat.telemetry.enabled": true,
-    "python.defaultInterpreterPath": "/opt/homebrew/bin/python3",
-    "makefile.configureOnOpen": true,
-    "claudeCode.preferredLocation": "panel"
-}

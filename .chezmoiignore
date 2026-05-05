@@ -8,7 +8,6 @@ packages/**
 {{- if ne .chezmoi.os "darwin" }}
 .config/ghostty/**
 .config/zsh/40-darwin.zsh
-Library/**
 {{- end }}
 
 {{- if ne .chezmoi.os "linux" }}

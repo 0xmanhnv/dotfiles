@@ -47,7 +47,6 @@ brew "rlwrap"
 
 # Casks
 cask "ghostty"
-cask "visual-studio-code"
 cask "font-jetbrains-mono-nerd-font"
 
 # Manual installers — NOT available via Homebrew. Install separately on a fresh

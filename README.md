@@ -89,7 +89,6 @@ by the repo doesn't wipe your real hosts.
 │   └── zsh/                           Modular shell config (see below)
 │
 ├── private_dot_ssh/config.tmpl        SSH client (0600, Include config.local for hosts)
-├── Library/Application Support/Code/User/settings.json   macOS — VS Code
 │
 └── run_once_*.sh.tmpl                 Idempotent setup scripts (packages, plugins, rustup, chsh)
 ```
@@ -193,7 +192,6 @@ chezmoi re-add ~/.config/nvim/lazy-lock.json
 | ---------------------------- | ------------------------ | -------------------- |
 | Package manager              | Homebrew (`Brewfile`)    | apt / pacman / dnf   |
 | Default terminal             | Ghostty (config tracked) | (your choice)        |
-| `~/Library/...` configs      | Applied                  | Skipped              |
 | `40-darwin.zsh`              | Loaded                   | Skipped              |
 | `40-linux.zsh`               | Skipped                  | Loaded               |
 | Cellar version pinning       | Auto via glob            | N/A                  |
