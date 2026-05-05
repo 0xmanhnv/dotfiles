@@ -33,11 +33,14 @@ jobs:
             apt-get update -qq
             apt-get install -y -qq curl sudo git ca-certificates
 
-            # Install chezmoi
+            # Install chezmoi binary
             sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
 
-            # Use the mounted source dir directly (no GitHub clone needed)
-            chezmoi init --source=/dotfiles
+            # Tell chezmoi where the source dir lives (avoids the default
+            # ~/.local/share/chezmoi path).
+            mkdir -p ~/.config/chezmoi
+            printf "sourceDir = \"/dotfiles\"\n" > ~/.config/chezmoi/chezmoi.toml
+
             chezmoi apply --verbose
 
             echo
@@ -71,7 +74,10 @@ jobs:
             dnf install -y -q curl sudo git
 
             sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
-            chezmoi init --source=/dotfiles
+
+            mkdir -p ~/.config/chezmoi
+            printf "sourceDir = \"/dotfiles\"\n" > ~/.config/chezmoi/chezmoi.toml
+
             chezmoi apply --verbose
 
             zsh -lic "type gst >/dev/null && echo zsh-OK; exit"

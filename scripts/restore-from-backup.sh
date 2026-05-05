@@ -47,9 +47,9 @@ else
     echo "Run 'bash backup-before-apply.sh' first." >&2
     exit 1
   fi
-  IFS=$'\n' sorted=($(printf '%s\n' "${candidates[@]}" | sort))
-  unset IFS
-  BACKUP_DIR="${sorted[${#sorted[@]}-1]}"
+  # Glob expansion already sorts lexically; timestamp suffix means lexical
+  # order = chronological order, so the last element is the most recent.
+  BACKUP_DIR="${candidates[${#candidates[@]}-1]}"
 fi
 
 # --- Preview -----------------------------------------------------------------
@@ -76,7 +76,7 @@ esac
 
 restored=0
 while IFS= read -r f; do
-  rel="${f#$BACKUP_DIR/}"
+  rel="${f#"$BACKUP_DIR"/}"
   dest="$HOME/$rel"
   mkdir -p "$(dirname "$dest")"
   cp -p "$f" "$dest"
