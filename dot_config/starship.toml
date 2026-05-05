@@ -65,7 +65,7 @@ truncation_symbol = "…/"
 [git_branch]
 symbol = ""
 style = "fg:mauve"
-format = '\[[$symbol $branch]($style)\] '
+format = '\[[on $symbol $branch]($style)\] '
 
 [git_status]
 style = "fg:peach"
@@ -74,68 +74,68 @@ format = '(\[[$all_status$ahead_behind]($style)\] )'
 [nodejs]
 symbol = ""
 style = "fg:green"
-format = '\[[$symbol $version]($style)\] '
+format = '\[[via $symbol $version]($style)\] '
 
 [bun]
 symbol = ""
 style = "fg:flamingo"
-format = '\[[$symbol $version]($style)\] '
+format = '\[[via $symbol $version]($style)\] '
 
 [python]
 symbol = ""
 style = "fg:yellow"
-format = '\[[$symbol $version$virtualenv]($style)\] '
+format = '\[[via $symbol $version$virtualenv]($style)\] '
 
 [rust]
 symbol = ""
 style = "fg:peach"
-format = '\[[$symbol $version]($style)\] '
+format = '\[[via $symbol $version]($style)\] '
 
 [golang]
 symbol = ""
 style = "fg:teal"
-format = '\[[$symbol $version]($style)\] '
+format = '\[[via $symbol $version]($style)\] '
 
 [java]
 symbol = " "
 style = "fg:red"
-format = '\[[$symbol$version]($style)\] '
+format = '\[[via $symbol$version]($style)\] '
 
 [kotlin]
 symbol = ""
 style = "fg:lavender"
-format = '\[[$symbol $version]($style)\] '
+format = '\[[via $symbol $version]($style)\] '
 
 [haskell]
 symbol = ""
 style = "fg:mauve"
-format = '\[[$symbol $version]($style)\] '
+format = '\[[via $symbol $version]($style)\] '
 
 [php]
 symbol = ""
 style = "fg:lavender"
-format = '\[[$symbol $version]($style)\] '
+format = '\[[via $symbol $version]($style)\] '
 
 [c]
 symbol = " "
 style = "fg:green"
-format = '\[[$symbol$version]($style)\] '
+format = '\[[via $symbol$version]($style)\] '
 
 [docker_context]
 symbol = ""
 style = "fg:blue"
-format = '\[[$symbol $context]($style)\] '
+format = '\[[via $symbol $context]($style)\] '
 
 [conda]
 symbol = " "
 style = "fg:sapphire"
-format = '\[[$symbol$environment]($style)\] '
+format = '\[[via $symbol$environment]($style)\] '
 ignore_base = false
 
 [cmd_duration]
 min_time = 2000
 style = "fg:yellow"
-format = '\[[$duration]($style)\] '
+format = '\[[took $duration]($style)\] '
 
 [time]
 disabled = false
