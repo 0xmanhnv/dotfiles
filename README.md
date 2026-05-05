@@ -19,7 +19,7 @@ What that does, in order:
 2. Clones this repo into `~/.local/share/chezmoi`
 3. Runs `run_once_before_*` scripts:
    - `01-install-packages` — Homebrew + `Brewfile` (macOS) or apt/pacman/dnf (Linux). This is what installs zsh, neovim, tmux, etc.
-   - `02-install-omz` — clones oh-my-zsh + the external plugins (`zsh-autosuggestions`, `zsh-syntax-highlighting`). Must run after step 3a so zsh exists.
+   - `02-install-zsh-plugins` — clones the 3 zsh plugins (`zsh-autosuggestions`, `zsh-syntax-highlighting`, `zsh-history-substring-search`) into `~/.local/share/zsh/plugins/`. Must run after step 3a so git is available.
 4. Renders templates (OS-aware) and links every dotfile into place
 5. Runs `run_once_after_*` scripts:
    - `02-setup-shell` — `chsh` to zsh; TPM is bootstrapped by `~/.tmux.conf` itself on first tmux launch
@@ -45,7 +45,7 @@ curl -fsSL https://raw.githubusercontent.com/0xmanhnv/dotfiles/main/bootstrap.sh
 ├── .chezmoidata.yaml                  Variables (name, email, github_user)
 ├── .chezmoiignore                     Per-OS file filters
 │
-├── dot_zshrc                          Loader: banner + OMZ + glob-source modules
+├── dot_zshrc                          Loader: pure zsh + Starship + 3 plugins (no OMZ)
 ├── dot_zshenv                         Pre-shell PATH (cargo, foundry)
 ├── dot_gitconfig.tmpl                 Git config (templated identity)
 ├── dot_tmux.conf                      tmux + auto-install TPM
@@ -211,7 +211,7 @@ Inside the container after the script returns, sanity-check:
 
 ```sh
 echo $SHELL                              # → /usr/bin/zsh (or similar)
-ls ~/.oh-my-zsh/custom/plugins/          # → zsh-autosuggestions, zsh-syntax-highlighting
+ls ~/.local/share/zsh/plugins/           # → zsh-autosuggestions, zsh-syntax-highlighting, zsh-history-substring-search
 ls ~/.config/zsh/                        # → 00-env.zsh, 10-path.zsh, ... (no 40-darwin.zsh on Linux)
 zsh -lic 'echo OK; exit'                 # → loader runs without "error sourcing" lines
 nvim --headless +q                       # → exits 0, LazyVim plugins install on first real launch
@@ -237,7 +237,7 @@ real macOS GUI. Options:
 
 | Layer       | Tool                                                                |
 | ----------- | ------------------------------------------------------------------- |
-| Shell       | zsh + [oh-my-zsh](https://ohmyz.sh/) + [starship](https://starship.rs/) |
+| Shell       | zsh + [starship](https://starship.rs/) + 3 plugins ([zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions), [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting), [zsh-history-substring-search](https://github.com/zsh-users/zsh-history-substring-search)) — no framework |
 | Editor      | [Neovim](https://neovim.io/) + [LazyVim](https://www.lazyvim.org/)  |
 | Terminal    | [Ghostty](https://ghostty.org/) (macOS)                             |
 | Multiplexer | [tmux](https://github.com/tmux/tmux) + [TPM](https://github.com/tmux-plugins/tpm) and/or [Zellij](https://zellij.dev/) |
@@ -274,5 +274,5 @@ Edit `.chezmoiignore` locally — chezmoi respects it without `init` again.
 
 ## License
 
-Personal config. Most plugin/tool defaults are stock LazyVim / oh-my-zsh /
+Personal config. Most plugin/tool defaults are stock LazyVim /
 chezmoi — credit upstream. Feel free to copy anything useful.
