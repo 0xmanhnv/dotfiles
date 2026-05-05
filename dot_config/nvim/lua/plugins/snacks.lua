@@ -49,8 +49,10 @@ return {
       enabled = true,
       sources = {
         explorer = {
-          hidden = true, -- show dotfiles
+          hidden = true,   -- show dotfiles
           ignored = false, -- hide gitignored files
+          watch = true,    -- libuv fs_event watcher: auto-refresh when files change on disk
+          auto_close = false,
         },
       },
     },
