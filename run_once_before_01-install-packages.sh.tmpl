@@ -28,6 +28,9 @@ if [[ -f /etc/debian_version ]]; then
 elif [[ -f /etc/arch-release ]]; then
   sudo pacman -Sy --noconfirm --needed $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/pacman.txt" | tr '\n' ' ')
 elif [[ -f /etc/fedora-release ]]; then
-  sudo dnf install -y $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/dnf.txt" | tr '\n' ' ')
+  # --skip-unavailable: don't fail the whole transaction if a single package
+  # has been renamed / removed in this Fedora release (common for the
+  # rolling-name java-XX-openjdk-devel formulas).
+  sudo dnf install -y --skip-unavailable $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/dnf.txt" | tr '\n' ' ')
 fi
 {{- end }}
