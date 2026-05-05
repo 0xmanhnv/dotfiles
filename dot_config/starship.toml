@@ -38,10 +38,12 @@ Debian = "󰣚"
 Alpine = ""
 
 [username]
-show_always = true
+# Show only when SSH'd into a remote box or running as root — hide on the
+# local primary account where the username adds no info.
+show_always = false
 style_user = "fg:lavender"
 style_root = "bold fg:red"
-format = '[$user]($style)'
+format = '[$user]($style) '
 
 [hostname]
 ssh_only = true
