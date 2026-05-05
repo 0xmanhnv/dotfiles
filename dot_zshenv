@@ -1,3 +1,10 @@
+# ~/.zshenv — sourced by EVERY zsh invocation (interactive, non-interactive,
+# scripts). Keep it minimal: only env vars / PATH for tools that are actually
+# present. Each entry guarded so a fresh machine without these tools doesn't
+# get a polluted PATH or a failing source.
+
+# Rust / Cargo
 [[ -s "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
 
-export PATH="$PATH:$HOME/.foundry/bin"
+# Foundry (Ethereum dev toolchain)
+[[ -d "$HOME/.foundry/bin" ]] && export PATH="$PATH:$HOME/.foundry/bin"
