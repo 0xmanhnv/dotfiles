@@ -18,5 +18,4 @@ unzip
 ca-certificates
 openjdk-21-jdk
 nodejs
-npm
 golang-go
