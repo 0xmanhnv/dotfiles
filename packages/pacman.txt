@@ -5,6 +5,8 @@ zsh
 neovim
 tmux
 fzf
+zoxide
+eza
 ripgrep
 fd
 bat

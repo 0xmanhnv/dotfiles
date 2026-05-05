@@ -22,7 +22,21 @@ fi
 command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
 
 # fzf shell integration (Ctrl-R history, Ctrl-T files, Alt-C cd).
-# `fzf --zsh` requires fzf 0.48+; falls back gracefully on older versions.
+# Modern fzf (>= 0.48, Brew/Arch/Fedora) supports `fzf --zsh`. Older Linux
+# packaging (Debian/Ubuntu apt) ships scripts separately under /usr/share/.
 if command -v fzf >/dev/null 2>&1; then
-  source <(fzf --zsh) 2>/dev/null || true
+  if fzf --zsh >/dev/null 2>&1; then
+    source <(fzf --zsh)
+  else
+    for _fzf_init in \
+      /usr/share/doc/fzf/examples/key-bindings.zsh \
+      /usr/share/doc/fzf/examples/completion.zsh \
+      /usr/share/fzf/key-bindings.zsh \
+      /usr/share/fzf/completion.zsh \
+      /opt/homebrew/opt/fzf/shell/key-bindings.zsh \
+      /opt/homebrew/opt/fzf/shell/completion.zsh; do
+      [[ -r "$_fzf_init" ]] && source "$_fzf_init"
+    done
+    unset _fzf_init
+  fi
 fi
