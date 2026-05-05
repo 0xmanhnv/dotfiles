@@ -17,11 +17,12 @@ What that does, in order:
 
 1. Installs the `chezmoi` binary
 2. Clones this repo into `~/.local/share/chezmoi`
-3. Renders templates (OS-aware) and links every dotfile into place
-4. Runs `run_once_*` scripts:
-   - Installs Homebrew + `Brewfile` packages (macOS) or apt/pacman/dnf packages (Linux)
-   - Sets `zsh` as the default shell
-   - Clones [TPM](https://github.com/tmux-plugins/tpm) so tmux plugins auto-install on first launch
+3. Runs `run_once_before_*` scripts:
+   - `01-install-packages` — Homebrew + `Brewfile` (macOS) or apt/pacman/dnf (Linux). This is what installs zsh, neovim, tmux, etc.
+   - `02-install-omz` — clones oh-my-zsh + the external plugins (`zsh-autosuggestions`, `zsh-syntax-highlighting`). Must run after step 3a so zsh exists.
+4. Renders templates (OS-aware) and links every dotfile into place
+5. Runs `run_once_after_*` scripts:
+   - `02-setup-shell` — `chsh` to zsh; TPM is bootstrapped by `~/.tmux.conf` itself on first tmux launch
 
 If the machine doesn't have `git`/`curl` yet, run the bootstrap helper:
 
@@ -163,6 +164,72 @@ chezmoi re-add ~/.config/nvim/lazy-lock.json
 | Cellar version pinning       | Auto via glob            | N/A                  |
 | Git credential helper        | `osxkeychain`            | `cache --timeout`    |
 | SSH `UseKeychain`            | Yes                      | No                   |
+
+---
+
+## Testing the bootstrap
+
+Before trusting the one-liner on a real new machine, validate it end-to-end
+in a throwaway container.
+
+### Option A — test the live remote bootstrap (after pushing to GitHub)
+
+```sh
+docker run -it --rm ubuntu:24.04 bash -c '
+  apt-get update -qq && apt-get install -y -qq curl sudo
+  sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply 0xmanhnv
+'
+```
+
+Takes ~5–10 minutes. The container is wiped on exit, no cleanup needed.
+Swap `ubuntu:24.04` for `archlinux:latest` or `fedora:latest` to test the
+other distro paths in `run_once_before_01-install-packages.sh.tmpl`.
+
+> **Private repo?** This needs `chezmoi init` to be able to clone via HTTPS or
+> SSH. Either make the repo public for the test, mount a PAT into the
+> container (`-e GITHUB_TOKEN=...`), or use Option B instead.
+
+### Option B — test the local source (no push needed)
+
+Useful while iterating on the source dir before pushing:
+
+```sh
+docker run -it --rm -v "$PWD:/dotfiles:ro" ubuntu:24.04 bash -c '
+  apt-get update -qq && apt-get install -y -qq curl sudo git
+  sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+  chezmoi init --source=/dotfiles
+  chezmoi apply
+'
+```
+
+This bypasses GitHub entirely — chezmoi reads source files straight from the
+mounted dir.
+
+### What to verify after install completes
+
+Inside the container after the script returns, sanity-check:
+
+```sh
+echo $SHELL                              # → /usr/bin/zsh (or similar)
+ls ~/.oh-my-zsh/custom/plugins/          # → zsh-autosuggestions, zsh-syntax-highlighting
+ls ~/.config/zsh/                        # → 00-env.zsh, 10-path.zsh, ... (no 40-darwin.zsh on Linux)
+zsh -lic 'echo OK; exit'                 # → loader runs without "error sourcing" lines
+nvim --headless +q                       # → exits 0, LazyVim plugins install on first real launch
+tmux new-session -d 'echo ok' \; kill-server   # → tmux config loads
+ls ~/.tmux/plugins/tpm 2>/dev/null && echo "TPM ready"
+```
+
+If any step fails, scroll up the bootstrap log — the offending `run_once`
+script will be named in the error.
+
+### macOS testing
+
+No throwaway equivalent — `cask` installs (Ghostty, VS Code, fonts) need a
+real macOS GUI. Options:
+
+- Use a fresh VM (UTM with macOS, ~30 min provisioning) — most realistic
+- Borrow another Mac
+- Trust the Brewfile and apply on the next real machine you set up
 
 ---
 
