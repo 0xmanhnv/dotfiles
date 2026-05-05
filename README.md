@@ -50,34 +50,37 @@ The backup script also extracts host entries from `~/.ssh/config` into
 `~/.ssh/config.local` (untracked) so the catch-all-only `~/.ssh/config` shipped
 by the repo doesn't wipe your real hosts.
 
-### On a Linux SERVER (lean, no language toolchains, sudo optional)
+### Full vs Minimal mode
 
-The default bootstrap installs Java + Node + Go + Python + Ruby + Rust — that's
-~500 MB of dev toolchains a server doesn't need, and may need sudo for. For
-servers, jump hosts, or restricted boxes, use the lean entrypoint:
+`bootstrap.sh` accepts a `--minimal` flag for machines that don't need the
+full dev toolchain (Java/Node/Go/Python/Ruby/Rust + NodeSource + rustup).
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/0xmanhnv/dotfiles/main/scripts/bootstrap-server.sh | bash
+# FULL (default) — workstations, dev servers, build agents
+curl -fsSL .../scripts/bootstrap.sh | bash
+
+# MINIMAL — production servers, jump hosts, restricted accounts, containers
+curl -fsSL .../scripts/bootstrap.sh | bash -s -- --minimal
+# or
+curl -fsSL .../scripts/bootstrap.sh | MINIMAL=1 bash
 ```
 
-What it does differently:
+What `--minimal` skips:
 
-| | Workstation bootstrap | Server bootstrap |
-|---|---|---|
-| Shell tools (zsh, neovim, tmux, fzf, ...) | ✓ install | ✓ install |
-| Starship + 4 zsh plugins | ✓ | ✓ (starship to `~/.local/bin/`, plugins to `~/.local/share/`) |
-| Java / Node / Go / Python / Ruby / Rust | ✓ | ✗ skipped |
-| GitHub CLI repo setup, NodeSource, rustup | ✓ | ✗ skipped |
-| `chsh` to zsh | required | best-effort, gracefully fails if denied |
-| Needs sudo? | yes | optional (degrades gracefully, useful in containers / shared servers) |
-| Distros covered | apt / pacman / dnf | apt / dnf (RHEL/Rocky too) / pacman |
+|                                    | Full | Minimal |
+|------------------------------------|------|---------|
+| Dotfiles + zsh modules             | ✓    | ✓       |
+| 4 zsh plugins (autosuggest etc.)   | ✓    | ✓       |
+| Brewfile / apt / dnf / pacman      | ✓    | ✗ skipped (install zsh, neovim, tmux yourself first) |
+| Java/Node/Go/Python/Ruby/Rust      | ✓    | ✗       |
+| NodeSource + GitHub CLI repos      | ✓    | ✗       |
+| rustup install                     | ✓    | ✗       |
+| `chsh` to zsh                      | ✓    | ✗       |
 
-Internally it just runs `chezmoi init --apply --exclude=scripts` — same
-dotfile rendering, none of the heavy `run_once_*` install scripts.
-
-If you later decide you need Node/Go/etc. on that server, install manually:
+Internally `--minimal` just adds `--exclude=scripts` to `chezmoi init --apply`,
+so all `run_once_*` scripts are skipped. Add toolchains later if needed:
 ```sh
-sudo apt install nodejs golang-go default-jdk ruby
+sudo apt install nodejs golang-go default-jdk ruby   # Debian/Ubuntu/Kali
 ```
 
 ---
@@ -91,8 +94,7 @@ sudo apt install nodejs golang-go default-jdk ruby
 ├── .github/workflows/ci.yml           shellcheck + chezmoi bootstrap on Ubuntu / Fedora / Kali
 │
 ├── scripts/
-│   ├── bootstrap.sh                   Pre-flight installer (git/curl + chezmoi)
-│   ├── bootstrap-server.sh            Lean entrypoint for Linux servers (no toolchains, sudo optional)
+│   ├── bootstrap.sh                   Pre-flight installer (git/curl + chezmoi); supports --minimal
 │   ├── backup-before-apply.sh         Snapshot files chezmoi would overwrite + migrate SSH hosts
 │   ├── restore-from-backup.sh         Revert from a backup dir (counterpart to backup script)
 │   ├── migrate-omz-to-starship.sh     One-shot OMZ → Starship migration on a live machine
