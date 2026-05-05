@@ -17,9 +17,12 @@ brew bundle --file="{{ .chezmoi.sourceDir }}/Brewfile"
 {{ else if eq .chezmoi.os "linux" -}}
 echo "==> Installing Linux packages"
 if [[ -f /etc/debian_version ]]; then
-  # NodeSource: apt's nodejs is typically v18 (way too old for current dev).
-  # Add NodeSource repo for current Active LTS (24) before installing.
-  if ! ls /etc/apt/sources.list.d/nodesource* >/dev/null 2>&1; then
+  # NodeSource only for Ubuntu/Debian proper — apt's nodejs there is typically
+  # v18, way too old. Kali/Parrot are rolling-release Debian derivatives that
+  # already ship Node 24+ in their default repos, and NodeSource's setup script
+  # doesn't officially target them.
+  if grep -qiE '^ID=(ubuntu|debian)$' /etc/os-release 2>/dev/null && \
+     ! ls /etc/apt/sources.list.d/nodesource* >/dev/null 2>&1; then
     echo "==> Setting up NodeSource (Node 24 LTS)"
     curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
   fi

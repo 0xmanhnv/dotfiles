@@ -77,3 +77,23 @@ jobs:
 
             zsh -lic "type gst >/dev/null && echo zsh-OK; exit"
           '
+
+  bootstrap-kali:
+    name: bootstrap end-to-end (Kali rolling)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply via chezmoi inside Kali container
+        run: |
+          docker run --rm -v "$PWD:/dotfiles:ro" kalilinux/kali-rolling bash -c '
+            set -euo pipefail
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qq
+            apt-get install -y -qq curl sudo git ca-certificates
+
+            sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+
+            chezmoi --source=/dotfiles apply --verbose
+
+            zsh -lic "type gst >/dev/null && echo zsh-OK; exit"
+          '
