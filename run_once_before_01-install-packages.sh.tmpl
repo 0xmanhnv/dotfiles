@@ -28,6 +28,13 @@ if [[ -f /etc/debian_version ]]; then
   fi
   sudo apt-get update
   xargs -a "{{ .chezmoi.sourceDir }}/packages/apt.txt" sudo apt-get install -y
+
+  # starship isn't in Ubuntu/Debian apt repos — install via official script
+  # if missing. Arch and Fedora have starship in their default repos.
+  if ! command -v starship >/dev/null 2>&1; then
+    echo "==> Installing starship (not available in apt)"
+    curl -sSfL https://starship.rs/install.sh | sh -s -- --yes
+  fi
 elif [[ -f /etc/arch-release ]]; then
   sudo pacman -Sy --noconfirm --needed $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/pacman.txt" | tr '\n' ' ')
 elif [[ -f /etc/fedora-release ]]; then

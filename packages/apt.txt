@@ -8,7 +8,6 @@ tmux
 fzf
 zoxide
 eza
-starship
 ripgrep
 fd-find
 bat
