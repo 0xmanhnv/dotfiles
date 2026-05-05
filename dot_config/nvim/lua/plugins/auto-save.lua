@@ -16,17 +16,18 @@ return {
     },
     -- Conditions: skip auto-save in these cases
     condition = function(buf)
-      -- Skip unmodifiable / readonly / unnamed buffers
-      if not vim.api.nvim_buf_get_option(buf, "modifiable") then return false end
-      if vim.api.nvim_buf_get_option(buf, "readonly") then return false end
-      local name = vim.api.nvim_buf_get_name(buf)
-      if name == "" then return false end
-      -- Skip oil / fugitive / other non-file buffers
-      local ft = vim.api.nvim_buf_get_option(buf, "filetype")
+      -- Skip unmodifiable / readonly / unnamed buffers.
+      -- Use vim.bo[buf] (modern API) instead of nvim_buf_get_option (deprecated 0.11+).
+      if not vim.bo[buf].modifiable then return false end
+      if vim.bo[buf].readonly then return false end
+      if vim.api.nvim_buf_get_name(buf) == "" then return false end
+
+      -- Skip oil / fugitive / pickers / other non-file buffers
       local skip_ft = { "oil", "fugitive", "TelescopePrompt", "snacks_picker_input" }
       for _, f in ipairs(skip_ft) do
-        if ft == f then return false end
+        if vim.bo[buf].filetype == f then return false end
       end
+
       -- Per-buffer opt-out
       if vim.b[buf].disable_autosave then return false end
       return true

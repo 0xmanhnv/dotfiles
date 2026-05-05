@@ -172,7 +172,8 @@ return {
   -- mason: ensure formatter binaries are installed alongside LSPs
   -- ---------------------------------------------------------------------------
   {
-    "williamboman/mason.nvim",
+    -- Note: was williamboman/mason.nvim, renamed to mason-org/mason.nvim in 2025.
+    "mason-org/mason.nvim",
     opts = function(_, opts)
       opts.ensure_installed = opts.ensure_installed or {}
       vim.list_extend(opts.ensure_installed, {
