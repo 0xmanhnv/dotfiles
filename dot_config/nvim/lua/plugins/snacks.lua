@@ -3,7 +3,7 @@ local function get_header()
   return table.concat({
     "                   _oo0oo_                   ",
     "                  o8888888o                  ",
-    "                  88\" . \"88                  ",
+    '                  88" . "88                  ',
     "                  (| -_- |)                  ",
     "                  0\\  =  /0                  ",
     "                ___/`---'\\___                ",
@@ -14,7 +14,7 @@ local function get_header()
     "           | \\_|  ''\\---/''  |_/ |           ",
     "           \\  .-\\__  '-'  ___/-. /           ",
     "         ___'. .'  /--.--\\  `. .'___         ",
-    "      .\"\" '<  `.___\\_<|>_/___.' >' \"\".      ",
+    '      ."" \'<  `.___\\_<|>_/___.\' >\' "".      ',
     "     | | :  `- \\`.;`\\ _ /`;.`/ - ` : | |     ",
     "     \\  \\ `_.   \\_ __\\ /__ _/   .-` /  /     ",
     " =====`-.____`.___ \\_____/___.-`___.-'=====  ",
@@ -40,10 +40,16 @@ return {
         { section = "startup" },
       },
     },
+    explorer = {
+      enabled = true,
+      replace_netrw = true,
+    },
+
     picker = {
+      enabled = true,
       sources = {
         explorer = {
-          hidden = true,   -- show dotfiles
+          hidden = true, -- show dotfiles
           ignored = false, -- hide gitignored files
         },
       },
