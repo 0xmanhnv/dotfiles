@@ -18,8 +18,7 @@ $nodejs$bun$python$rust$golang$java$kotlin$haskell$php$c\
 $docker_context\
 $conda\
 $cmd_duration\
-$time\
-$line_break\
+$time \
 $character"""
 
 add_newline = true
