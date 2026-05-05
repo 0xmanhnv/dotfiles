@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Install rustup + stable Rust toolchain (cross-platform official installer).
+# Rust is intentionally NOT in Brewfile / apt / pacman / dnf because:
+#   - Distro-packaged Rust is usually outdated
+#   - rustup is the canonical Rust toolchain manager (rustfmt, clippy, multiple
+#     toolchains, target cross-compile, etc.) — same on macOS + Linux
+# Idempotent: skipped if ~/.cargo or rustup is already present.
+set -euo pipefail
+
+if [[ -d "$HOME/.cargo" ]] || command -v rustup >/dev/null 2>&1; then
+  echo "==> rustup / .cargo already present — skipping"
+  exit 0
+fi
+
+echo "==> Installing rustup + stable Rust toolchain"
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+  sh -s -- -y --default-toolchain stable --profile default --no-modify-path
+
+echo "==> Done. ~/.zshenv already sources ~/.cargo/env on shell start."
