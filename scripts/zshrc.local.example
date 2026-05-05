@@ -1,0 +1,41 @@
+# ~/.zshrc.local — machine-specific overrides, NOT tracked by chezmoi.
+#
+# Sourced LAST by ~/.zshrc, so anything here overrides the modular config
+# in ~/.config/zsh/*.zsh. Use this for per-machine customizations:
+#
+#   - work laptop API keys / secrets
+#   - project shortcuts that only exist on this machine
+#   - employer-specific PATH additions
+#   - anything you don't want shared across all your machines
+#
+# To use: copy this file to ~/.zshrc.local and edit:
+#     cp scripts/zshrc.local.example ~/.zshrc.local
+
+# === API keys / secrets =====================================================
+# export OPENAI_API_KEY="sk-..."
+# export ANTHROPIC_API_KEY="sk-ant-..."
+# export GITHUB_TOKEN="ghp_..."
+# export AWS_PROFILE="work"
+
+# === Project shortcuts ======================================================
+# alias work='cd ~/work/employer-monorepo'
+# alias notes='cd ~/Documents/notes && nvim'
+# alias api='cd ~/work/api-server && code .'
+
+# === Per-machine PATH =======================================================
+# export PATH="$HOME/work/scripts:$PATH"
+# export PATH="$HOME/Library/Custom-tools/bin:$PATH"
+
+# === Override prompt for special contexts ==================================
+# # Plain prompt over slow SSH or in tmux
+# if [[ -n "$SSH_CONNECTION" ]]; then
+#   precmd_functions=()
+#   PS1='%n@%m %1~ $ '
+# fi
+
+# === Override aliases =======================================================
+# alias rm='rm -i'   # paranoid mode on this machine
+
+# === Tool init that needs user secrets =====================================
+# command -v direnv >/dev/null && eval "$(direnv hook zsh)"
+# [[ -f "$HOME/.work-secrets" ]] && source "$HOME/.work-secrets"

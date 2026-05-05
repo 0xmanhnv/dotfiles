@@ -17,6 +17,12 @@ brew bundle --file="{{ .chezmoi.sourceDir }}/Brewfile"
 {{ else if eq .chezmoi.os "linux" -}}
 echo "==> Installing Linux packages"
 if [[ -f /etc/debian_version ]]; then
+  # NodeSource: apt's nodejs is typically v18 (way too old for current dev).
+  # Add NodeSource repo for current Active LTS (24) before installing.
+  if ! ls /etc/apt/sources.list.d/nodesource* >/dev/null 2>&1; then
+    echo "==> Setting up NodeSource (Node 24 LTS)"
+    curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+  fi
   sudo apt-get update
   xargs -a "{{ .chezmoi.sourceDir }}/packages/apt.txt" sudo apt-get install -y
 elif [[ -f /etc/arch-release ]]; then

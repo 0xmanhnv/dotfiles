@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  shellcheck:
+    name: shellcheck (scripts/*.sh)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run shellcheck
+        uses: ludeeus/action-shellcheck@master
+        env:
+          # SC1090/SC1091: shellcheck can't follow dynamic `source` paths — fine,
+          # we guard them at runtime with [[ -s ]] / command -v.
+          SHELLCHECK_OPTS: -e SC1090 -e SC1091
+        with:
+          scandir: ./scripts
+
+  bootstrap-ubuntu:
+    name: bootstrap end-to-end (Ubuntu 24.04)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply this dotfiles repo via chezmoi inside Ubuntu container
+        run: |
+          docker run --rm -v "$PWD:/dotfiles:ro" ubuntu:24.04 bash -c '
+            set -euo pipefail
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qq
+            apt-get install -y -qq curl sudo git ca-certificates
+
+            # Install chezmoi
+            sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+
+            # Use the mounted source dir directly (no GitHub clone needed)
+            chezmoi init --source=/dotfiles
+            chezmoi apply --verbose
+
+            echo
+            echo "===== POST-APPLY VERIFICATION ====="
+
+            # Files present
+            test -f ~/.zshrc                              && echo "✓ ~/.zshrc"
+            test -d ~/.config/zsh                         && echo "✓ ~/.config/zsh/"
+            test -d ~/.local/share/zsh/plugins/zsh-autosuggestions   && echo "✓ autosuggestions"
+            test -d ~/.local/share/zsh/plugins/fzf-tab               && echo "✓ fzf-tab"
+            test -d ~/.local/share/zsh/plugins/zsh-syntax-highlighting && echo "✓ syntax-highlighting"
+
+            # Shell loads cleanly + aliases work
+            zsh -lic "
+              type gst >/dev/null && echo \"✓ gst alias\"
+              type take >/dev/null && echo \"✓ take fn\"
+              command -v starship >/dev/null && echo \"✓ starship\"
+              exit
+            "
+          '
+
+  bootstrap-fedora:
+    name: bootstrap end-to-end (Fedora)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply via chezmoi inside Fedora container
+        run: |
+          docker run --rm -v "$PWD:/dotfiles:ro" fedora:latest bash -c '
+            set -euo pipefail
+            dnf install -y -q curl sudo git
+
+            sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+            chezmoi init --source=/dotfiles
+            chezmoi apply --verbose
+
+            zsh -lic "type gst >/dev/null && echo zsh-OK; exit"
+          '
