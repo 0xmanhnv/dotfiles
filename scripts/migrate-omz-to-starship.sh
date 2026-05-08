@@ -50,15 +50,24 @@ else
   echo "==> starship already installed ($(starship --version | head -1))"
 fi
 
-# --- 3. Clone the 3 zsh plugins ---------------------------------------------
+# --- 3. Clone the 4 zsh plugins ---------------------------------------------
+# Mirror run_once_before_02-install-zsh-plugins.sh.tmpl: same set, same order.
 PLUGIN_DIR="$HOME/.local/share/zsh/plugins"
 mkdir -p "$PLUGIN_DIR"
-for repo in zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search; do
-  if [[ -d "$PLUGIN_DIR/$repo" ]]; then
-    echo "==> Plugin already present: $repo"
+plugins=(
+  "zsh-autosuggestions          https://github.com/zsh-users/zsh-autosuggestions.git"
+  "fzf-tab                      https://github.com/Aloxaf/fzf-tab.git"
+  "zsh-syntax-highlighting      https://github.com/zsh-users/zsh-syntax-highlighting.git"
+  "zsh-history-substring-search https://github.com/zsh-users/zsh-history-substring-search.git"
+)
+for entry in "${plugins[@]}"; do
+  name="${entry%% *}"
+  url="${entry##* }"
+  if [[ -d "$PLUGIN_DIR/$name" ]]; then
+    echo "==> Plugin already present: $name"
   else
-    echo "==> Cloning plugin: $repo"
-    git clone --depth=1 "https://github.com/zsh-users/$repo.git" "$PLUGIN_DIR/$repo"
+    echo "==> Cloning plugin: $name"
+    git clone --depth=1 "$url" "$PLUGIN_DIR/$name"
   fi
 done
 
@@ -78,12 +87,28 @@ fi
 echo "==> Wrote ~/.config/zsh/ (5 modules)"
 
 # --- 5. Starship config -----------------------------------------------------
+# starship.toml is a chezmoi template (gates Nerd Font glyphs vs ASCII via
+# the .nerd_font data var). This script doesn't go through chezmoi, so render
+# the template via `chezmoi execute-template` if available; otherwise bake
+# nerd_font=true (matching the upstream default).
 mkdir -p "$HOME/.config"
 if [[ -f "$HOME/.config/starship.toml" ]]; then
   echo "==> ~/.config/starship.toml already exists — leaving alone"
 else
-  cp -p "$REPO_ROOT/dot_config/starship.toml" "$HOME/.config/starship.toml"
-  echo "==> Wrote ~/.config/starship.toml"
+  STARSHIP_SRC="$REPO_ROOT/dot_config/starship.toml.tmpl"
+  if command -v chezmoi >/dev/null 2>&1; then
+    chezmoi execute-template < "$STARSHIP_SRC" > "$HOME/.config/starship.toml"
+  else
+    # Strip {{ if .nerd_font }}…{{ else }}…{{ end }} blocks, keeping the
+    # nerd-font branch (matches the .chezmoidata.yaml default).
+    awk '
+      /{{- if \.nerd_font/ { mode="nerd"; next }
+      /{{- else/           { mode="ascii"; next }
+      /{{- end/            { mode="";    next }
+      mode != "ascii"      { print }
+    ' "$STARSHIP_SRC" > "$HOME/.config/starship.toml"
+  fi
+  echo "==> Wrote ~/.config/starship.toml (Nerd Font variant)"
 fi
 
 # --- 6. Replace ~/.zshrc ----------------------------------------------------

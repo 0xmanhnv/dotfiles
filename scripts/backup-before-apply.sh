@@ -17,6 +17,10 @@
 
 set -euo pipefail
 
+# Minimal Docker / CI runners don't always export USER — derive it
+# defensively so `set -u` doesn't abort.
+me="${USER:-$(id -un)}"
+
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="$HOME/dotfiles-backup-$TIMESTAMP"
 
@@ -64,9 +68,9 @@ fi
 
 USER_SHELL=""
 if command -v dscl >/dev/null 2>&1; then
-  USER_SHELL=$(dscl . -read "/Users/$USER" UserShell 2>/dev/null | awk '{print $2}')
+  USER_SHELL=$(dscl . -read "/Users/$me" UserShell 2>/dev/null | awk '{print $2}')
 fi
-[[ -z "$USER_SHELL" ]] && USER_SHELL=$(getent passwd "$USER" 2>/dev/null | awk -F: '{print $7}' || true)
+[[ -z "$USER_SHELL" ]] && USER_SHELL=$(getent passwd "$me" 2>/dev/null | awk -F: '{print $7}' || true)
 [[ -z "$USER_SHELL" ]] && USER_SHELL="${SHELL:-}"
 if [[ -n "$USER_SHELL" ]]; then
   printf '%s\n' "$USER_SHELL" > "$BACKUP_DIR/default-shell.txt"
