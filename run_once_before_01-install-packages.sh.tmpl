@@ -47,12 +47,20 @@ if [[ -f /etc/debian_version ]]; then
   # set in one shot and hand the rest to fallback installers below. Debian 12
   # / Parrot 6 / Kali don't carry eza, zoxide, yq, or openjdk-21 in default
   # repos — those need out-of-band installs.
+  # apt-cache policy is the right tool here: a package can be referenced by
+  # other packages' Depends without having an installation candidate in this
+  # release (e.g. neovim got pulled from Parrot lory but is still mentioned in
+  # the package graph). `apt-cache show` returns 0 for those phantom entries,
+  # so we'd misclassify them as available and the batch install would still
+  # abort. `apt-cache policy` reports `Candidate: (none)` for them.
   apt_list="{{ .chezmoi.sourceDir }}/packages/apt.txt"
   available=()
   missing=()
   while IFS= read -r pkg; do
     [[ -z "$pkg" || "$pkg" =~ ^[[:space:]]*# ]] && continue
-    if apt-cache show "$pkg" >/dev/null 2>&1; then
+    candidate="$(apt-cache policy "$pkg" 2>/dev/null \
+      | awk '/^[[:space:]]+Candidate:/ {print $2; exit}')"
+    if [[ -n "$candidate" && "$candidate" != "(none)" ]]; then
       available+=("$pkg")
     else
       missing+=("$pkg")
@@ -125,6 +133,29 @@ if [[ -f /etc/debian_version ]]; then
   if is_missing openjdk-21-jdk && ! command -v javac >/dev/null 2>&1; then
     echo "==> openjdk-21-jdk not in apt — installing default-jdk"
     sudo apt-get install -y default-jdk
+  fi
+
+  # neovim fallback: follow the upstream pre-built tarball recipe from
+  # https://neovim.io/doc/install/ verbatim — extract to /opt and let the
+  # PATH entry in dot_config/zsh/40-linux.zsh pick it up.
+  # Parrot lory at one point shipped neovim metadata without an installation
+  # candidate, so apt-get install has nothing to do.
+  case "$(uname -m)" in
+    x86_64) nvim_arch=x86_64 ;;
+    aarch64|arm64) nvim_arch=arm64 ;;
+    *) nvim_arch="" ;;
+  esac
+  if is_missing neovim && [[ -n "$nvim_arch" && ! -x "/opt/nvim-linux-${nvim_arch}/bin/nvim" ]]; then
+    echo "==> Installing neovim from upstream tarball (neovim.io recipe)"
+    tmp="$(mktemp -d)"
+    curl -fsSL \
+      "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${nvim_arch}.tar.gz" \
+      -o "$tmp/nvim.tar.gz"
+    sudo rm -rf "/opt/nvim-linux-${nvim_arch}"
+    sudo tar -C /opt -xzf "$tmp/nvim.tar.gz"
+    rm -rf "$tmp"
+  elif is_missing neovim && [[ -z "$nvim_arch" ]]; then
+    echo "WARNING: arch $(uname -m) unsupported for neovim tarball — install manually" >&2
   fi
 elif [[ -f /etc/arch-release ]]; then
   sudo pacman -Sy --noconfirm --needed $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/pacman.txt" | tr '\n' ' ')
