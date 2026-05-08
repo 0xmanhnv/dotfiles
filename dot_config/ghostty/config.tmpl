@@ -13,7 +13,14 @@ theme = light:Catppuccin Latte,dark:Catppuccin Mocha
 minimum-contrast = 1.1
 
 # ----- Font -----------------------------------------------------------------
+{{ if .nerd_font -}}
 font-family = JetBrainsMono Nerd Font
+{{- else -}}
+# nerd_font = false — fall back to a generic monospace family. Set per-machine
+# in ~/.config/chezmoi/chezmoi.toml ([data] nerd_font = false) on terminals
+# without the Nerd Font installed.
+font-family = JetBrains Mono
+{{- end }}
 font-size = 14
 font-thicken = true
 

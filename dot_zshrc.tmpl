@@ -91,6 +91,9 @@ if [[ -s "$ZSH_PLUGINS_DIR/fzf-tab/fzf-tab.plugin.zsh" ]]; then
   zstyle ':fzf-tab:*' use-fzf-default-opts yes
   zstyle ':fzf-tab:*' switch-group ',' '.'
   zstyle ':completion:*:descriptions' format '[%d]'
+  # nerd_font flag controls --icons in eza previews. Without Nerd Font the
+  # glyphs render as boxes inside the fzf preview pane.
+{{- if .nerd_font }}
   zstyle ':fzf-tab:complete:cd:*' \
     fzf-preview 'eza -1 --color=always --icons "$realpath" 2>/dev/null || ls -1 "$realpath"'
   zstyle ':fzf-tab:complete:__zoxide_z:*' \
@@ -99,6 +102,16 @@ if [[ -s "$ZSH_PLUGINS_DIR/fzf-tab/fzf-tab.plugin.zsh" ]]; then
     fzf-preview 'bat --color=always --line-range :50 "$realpath" 2>/dev/null \
                  || eza -1 --color=always --icons "$realpath" 2>/dev/null \
                  || cat "$realpath" 2>/dev/null'
+{{- else }}
+  zstyle ':fzf-tab:complete:cd:*' \
+    fzf-preview 'eza -1 --color=always "$realpath" 2>/dev/null || ls -1 "$realpath"'
+  zstyle ':fzf-tab:complete:__zoxide_z:*' \
+    fzf-preview 'eza -1 --color=always "$realpath" 2>/dev/null || ls -1 "$realpath"'
+  zstyle ':fzf-tab:complete:*:*' \
+    fzf-preview 'bat --color=always --line-range :50 "$realpath" 2>/dev/null \
+                 || eza -1 --color=always "$realpath" 2>/dev/null \
+                 || cat "$realpath" 2>/dev/null'
+{{- end }}
   zstyle ':fzf-tab:complete:(kill|ps):argument-rest' \
     fzf-preview 'ps -o pid,cmd -p $word 2>/dev/null'
   zstyle ':fzf-tab:complete:git-(add|diff|restore):*' \

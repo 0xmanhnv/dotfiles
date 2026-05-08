@@ -90,7 +90,7 @@ upgrade a server to a desktop profile (rare on a server, but possible):
 chezmoi apply
 ```
 
-Internally `--minimal` just adds `--exclude=scripts` to `chezmoi init --apply`,
+Internally `--minimal` just adds `--exclude=scripts` to `chezmoi update`,
 so all `run_once_*` scripts are skipped. Add toolchains later if needed:
 ```sh
 sudo apt install nodejs golang-go default-jdk ruby   # Debian/Ubuntu/Kali
@@ -98,8 +98,9 @@ sudo apt install nodejs golang-go default-jdk ruby   # Debian/Ubuntu/Kali
 
 ### Nerd Font fallback
 
-The starship prompt and `eza --icons` use Nerd Font glyphs. The default
-`nerd_font: true` matches the primary workstation (Brewfile installs
+The starship prompt OS icons and clock glyph, the Ghostty `font-family`,
+and the eza-based fzf-tab previews all rely on Nerd Font codepoints. The
+default `nerd_font: true` matches the primary workstation (Brewfile installs
 `font-jetbrains-mono-nerd-font` on macOS; the Linux `run_once` fetches
 JetBrainsMono from the official Nerd Fonts release).
 
@@ -113,8 +114,12 @@ Nerd Font), opt out:
 nerd_font = false
 ```
 
-Then `chezmoi apply`. Starship falls back to ASCII labels (`mac`, `arch`,
-`debian`…) and eza drops `--icons`.
+Then `chezmoi apply`. Starship's OS icon falls back to plain distro names
+(`mac`, `arch`, `debian`…), the clock prefix and folder substitutions are
+dropped, fzf-tab previews drop `--icons`, and Ghostty's `font-family` falls
+back to plain `JetBrains Mono`. The `eza` aliases (`ls`/`ll`/`la`/`lt`/
+`tree`) never request `--icons` regardless of this flag — pass `--icons`
+ad hoc when you want them.
 
 ---
 
@@ -335,7 +340,7 @@ Inside the container after the script returns, sanity-check:
 
 ```sh
 echo $SHELL                              # → /usr/bin/zsh (or similar)
-ls ~/.local/share/zsh/plugins/           # → zsh-autosuggestions, zsh-syntax-highlighting, zsh-history-substring-search
+ls ~/.local/share/zsh/plugins/           # → zsh-autosuggestions, fzf-tab, zsh-syntax-highlighting, zsh-history-substring-search
 ls ~/.config/zsh/                        # → 00-env.zsh, 10-path.zsh, ... (no 40-darwin.zsh on Linux)
 zsh -lic 'echo OK; exit'                 # → loader runs without "error sourcing" lines
 nvim --headless +q                       # → exits 0, LazyVim plugins install on first real launch
