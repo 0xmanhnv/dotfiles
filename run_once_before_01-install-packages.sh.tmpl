@@ -40,13 +40,91 @@ if [[ -f /etc/debian_version ]]; then
   fi
 
   sudo apt-get update
-  xargs -a "{{ .chezmoi.sourceDir }}/packages/apt.txt" sudo apt-get install -y
+
+  # apt-get install is all-or-nothing: a single missing package aborts the
+  # whole batch and skips even the available ones. Split apt.txt into packages
+  # the configured repos can resolve vs. the rest, then install the resolvable
+  # set in one shot and hand the rest to fallback installers below. Debian 12
+  # / Parrot 6 / Kali don't carry eza, zoxide, yq, or openjdk-21 in default
+  # repos — those need out-of-band installs.
+  apt_list="{{ .chezmoi.sourceDir }}/packages/apt.txt"
+  available=()
+  missing=()
+  while IFS= read -r pkg; do
+    [[ -z "$pkg" || "$pkg" =~ ^[[:space:]]*# ]] && continue
+    if apt-cache show "$pkg" >/dev/null 2>&1; then
+      available+=("$pkg")
+    else
+      missing+=("$pkg")
+    fi
+  done < "$apt_list"
+
+  if (( ${#available[@]} > 0 )); then
+    sudo apt-get install -y "${available[@]}"
+  fi
+  if (( ${#missing[@]} > 0 )); then
+    echo "==> Not in apt repos on this distro: ${missing[*]} — using fallback installers"
+  fi
+
+  is_missing() {
+    local p="$1" m
+    for m in ${missing[@]+"${missing[@]}"}; do
+      [[ "$m" == "$p" ]] && return 0
+    done
+    return 1
+  }
 
   # starship isn't in Ubuntu/Debian apt repos — install via official script
   # if missing. Arch and Fedora have starship in their default repos.
   if ! command -v starship >/dev/null 2>&1; then
     echo "==> Installing starship (not available in apt)"
     curl -sSfL https://starship.rs/install.sh | sh -s -- --yes
+  fi
+
+  # eza fallback: upstream-packaged apt repo (deb.gierens.de). Only added to
+  # Debian main in trixie/13, so Debian 12 / Parrot / Kali / older Ubuntu
+  # need this.
+  if is_missing eza && ! command -v eza >/dev/null 2>&1; then
+    echo "==> Installing eza from deb.gierens.de"
+    sudo mkdir -p -m 755 /etc/apt/keyrings
+    curl -fsSL https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | \
+      sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+    echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | \
+      sudo tee /etc/apt/sources.list.d/gierens.list >/dev/null
+    sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
+    sudo apt-get update
+    sudo apt-get install -y eza
+  fi
+
+  # zoxide fallback: official install script. Lands in /usr/local/bin so it's
+  # on PATH for every shell.
+  if is_missing zoxide && ! command -v zoxide >/dev/null 2>&1; then
+    echo "==> Installing zoxide from official install script"
+    curl -fsSL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh \
+      -o /tmp/zoxide-install.sh
+    sudo sh /tmp/zoxide-install.sh --bin-dir /usr/local/bin
+    rm -f /tmp/zoxide-install.sh
+  fi
+
+  # yq fallback: mikefarah/yq Go binary from GitHub releases. The Python yq
+  # in pip is a different tool; we want the Go one (matches Brewfile / dnf).
+  if is_missing yq && ! command -v yq >/dev/null 2>&1; then
+    echo "==> Installing yq from GitHub releases"
+    yq_arch="$(dpkg --print-architecture)"
+    case "$yq_arch" in
+      armhf) yq_arch=arm ;;
+    esac
+    sudo curl -fsSL \
+      "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${yq_arch}" \
+      -o /usr/local/bin/yq
+    sudo chmod +x /usr/local/bin/yq
+  fi
+
+  # openjdk-21 fallback: distros that don't ship the explicit -21 metapackage
+  # (Debian 12, Parrot 6, Kali 2024.x) get default-jdk instead.
+  if is_missing openjdk-21-jdk && ! command -v javac >/dev/null 2>&1; then
+    echo "==> openjdk-21-jdk not in apt — installing default-jdk"
+    sudo apt-get install -y default-jdk
   fi
 elif [[ -f /etc/arch-release ]]; then
   sudo pacman -Sy --noconfirm --needed $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/pacman.txt" | tr '\n' ' ')
