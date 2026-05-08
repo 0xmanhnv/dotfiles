@@ -4,12 +4,35 @@
 # file), so we don't duplicate it here.
 set -euo pipefail
 
-# Set zsh as default shell
 ZSH_PATH="$(command -v zsh || true)"
 if [[ -n "$ZSH_PATH" && "$SHELL" != "$ZSH_PATH" ]]; then
-  echo "==> Changing default shell to zsh"
+  echo "==> Setting zsh as default shell"
   if ! grep -qx "$ZSH_PATH" /etc/shells 2>/dev/null; then
     echo "$ZSH_PATH" | sudo tee -a /etc/shells >/dev/null
   fi
-  chsh -s "$ZSH_PATH" || true
+
+  # Try interactive chsh first. If it fails — typically because chezmoi runs
+  # without an interactive TTY for the password prompt — fall back to sudo,
+  # which bypasses the user-password requirement and reuses the cached sudo
+  # timestamp from the apt/dnf/pacman steps a moment earlier.
+  if ! chsh -s "$ZSH_PATH" 2>/dev/null; then
+    echo "==> chsh needed elevation, retrying via sudo"
+    sudo chsh -s "$ZSH_PATH" "$USER" || true
+  fi
+
+  # Verify by reading /etc/passwd directly — $SHELL still reflects the parent
+  # process's shell, not what next login will use. macOS uses Directory
+  # Services so getent isn't reliable there; dscl is the correct lookup.
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    current="$(dscl . -read "/Users/$USER" UserShell 2>/dev/null | awk '{print $2}')"
+  else
+    current="$(getent passwd "$USER" | cut -d: -f7)"
+  fi
+
+  if [[ "$current" != "$ZSH_PATH" ]]; then
+    echo "WARNING: login shell is still '$current', not '$ZSH_PATH'." >&2
+    echo "  Run manually:  chsh -s '$ZSH_PATH'" >&2
+  else
+    echo "==> Default shell set to zsh (effective on next login)"
+  fi
 fi
