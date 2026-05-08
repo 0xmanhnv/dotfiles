@@ -101,6 +101,16 @@ mkdir -p "$INSTALL_DIR"
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$INSTALL_DIR" init "$GITHUB_USER"
 CHEZMOI="$INSTALL_DIR/chezmoi"
 
+# Clean up any chezmoi binary at the legacy default location ($HOME/bin/),
+# which earlier bootstrap revisions (and a bare `get.chezmoi.io | sh`)
+# install to. $HOME/bin isn't on the dotfiles' PATH, and keeping two
+# binaries means whichever one is found first could drift in version.
+if [[ -x "$CHEZMOI" && -f "$HOME/bin/chezmoi" ]]; then
+  echo "==> Removing legacy chezmoi at ~/bin/chezmoi"
+  rm -f "$HOME/bin/chezmoi"
+  rmdir "$HOME/bin" 2>/dev/null || true
+fi
+
 # Use `chezmoi update` (= git pull + apply) instead of `init --apply`.
 # init --apply does NOT pull on existing source dirs — re-running bootstrap
 # on a machine that already has ~/.local/share/chezmoi would silently use
