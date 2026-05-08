@@ -7,21 +7,15 @@
 # Prefer `eza` (modern Rust ls with icons + color + git status). Fall back to
 # system ls with color flag if eza isn't installed.
 if command -v eza >/dev/null 2>&1; then
-{{- if .nerd_font }}
-  alias ls='eza --icons=auto --group-directories-first'
-  alias ll='eza -lah --icons=auto --group-directories-first --git'
-  alias la='eza -a --icons=auto --group-directories-first'
-  alias lt='eza --tree --icons=auto --level=2'
-  alias tree='eza --tree --icons=auto'
-{{- else }}
-  # nerd_font = false: drop --icons so eza doesn't emit Nerd Font glyphs the
-  # terminal can't render.
+  # No --icons: filename + eza's color-coding already convey file type;
+  # icons add noise without new info. Same minimalist logic as the dropped
+  # starship [directory.substitutions]. Use `eza --icons file…` ad hoc when
+  # you actually want them.
   alias ls='eza --group-directories-first'
   alias ll='eza -lah --group-directories-first --git'
   alias la='eza -a --group-directories-first'
   alias lt='eza --tree --level=2'
   alias tree='eza --tree'
-{{- end }}
 else
   if [[ "$(uname -s)" == "Darwin" ]]; then
     alias ls='ls -G'        # BSD ls (macOS): -G enables color
