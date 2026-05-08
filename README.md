@@ -121,6 +121,24 @@ back to plain `JetBrains Mono`. The `eza` aliases (`ls`/`ll`/`la`/`lt`/
 `tree`) never request `--icons` regardless of this flag — pass `--icons`
 ad hoc when you want them.
 
+### Slow-terminal mode
+
+If typing feels laggy and characters double up or drop on a particular
+machine — typically code-server's browser xterm.js, SSH over high-RTT
+links, or a low-CPU VM — opt the heavy `zsh-syntax-highlighting` plugin
+out:
+
+```toml
+# ~/.config/chezmoi/chezmoi.toml
+[data]
+slow_terminal = true
+```
+
+`zsh-autosuggestions` stays on but runs async (set globally for everyone
+since async has no downside). The default `slow_terminal: false` keeps
+the full plugin set on workstations where there's plenty of CPU and a
+local terminal.
+
 ---
 
 ## What's inside

@@ -27,3 +27,17 @@ profile: "desktop"
 #
 # In that mode, starship falls back to ASCII labels and eza drops --icons.
 nerd_font: true
+
+# Opt out of zsh-syntax-highlighting on machines where typing feels laggy
+# or characters get duplicated/lost — typically code-server's xterm.js
+# over WebSocket, SSH over high-RTT links, or low-CPU VMs. The plugin re-
+# parses the whole command buffer on every keystroke, and on slow front-
+# ends that compounds with network latency until the visible buffer
+# diverges from zsh's internal state. autosuggestions stays on (it's
+# already async after this change).
+#
+# Override per-machine in ~/.config/chezmoi/chezmoi.toml:
+#
+#   [data]
+#   slow_terminal = true
+slow_terminal: false

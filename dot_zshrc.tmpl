@@ -79,6 +79,14 @@ export PATH="$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH"
 #   4. zsh-history-substring-search — must come AFTER syntax-highlighting
 ZSH_PLUGINS_DIR="${ZSH_PLUGINS_DIR:-$HOME/.local/share/zsh/plugins}"
 
+# Async + buffer cap: keep zle responsive on slow terminals (code-server's
+# xterm.js, SSH over high-RTT links, low-CPU boxes). Async runs the lookup
+# in a forked subshell via zsh/zpty so each keystroke doesn't block the
+# editor; the buffer cap stops suggesting once the input passes 20 chars,
+# where lookups get expensive and the suggestion is rarely useful.
+export ZSH_AUTOSUGGEST_USE_ASYNC=1
+export ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
+
 [[ -s "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] && \
   source "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
 
@@ -120,8 +128,15 @@ if [[ -s "$ZSH_PLUGINS_DIR/fzf-tab/fzf-tab.plugin.zsh" ]]; then
     fzf-preview 'git log --color=always --oneline --graph -20 "$word" 2>/dev/null'
 fi
 
+{{- if not .slow_terminal }}
 [[ -s "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && \
   source "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+{{- else }}
+# slow_terminal=true: skip zsh-syntax-highlighting. It's a synchronous zle
+# widget that re-parses the entire buffer on every keystroke — the worst
+# offender for typing-lag and char-doubling on web/SSH terminals where
+# WebSocket / network round-trips compound the per-keystroke cost.
+{{- end }}
 
 if [[ -s "$ZSH_PLUGINS_DIR/zsh-history-substring-search/zsh-history-substring-search.zsh" ]]; then
   source "$ZSH_PLUGINS_DIR/zsh-history-substring-search/zsh-history-substring-search.zsh"
