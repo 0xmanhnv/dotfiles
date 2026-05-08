@@ -29,6 +29,7 @@ style = "fg:peach"
 format = '[$symbol]($style)'
 
 [os.symbols]
+{{- if .nerd_font }}
 Macos = "󰀵"
 Linux = "󰌽"
 Ubuntu = "󰕈"
@@ -36,6 +37,16 @@ Arch = "󰣇"
 Fedora = "󰣛"
 Debian = "󰣚"
 Alpine = ""
+{{- else }}
+# nerd_font = false: ASCII labels for terminals that can't render glyphs.
+Macos = "mac"
+Linux = "linux"
+Ubuntu = "ubuntu"
+Arch = "arch"
+Fedora = "fedora"
+Debian = "debian"
+Alpine = "alpine"
+{{- end }}
 
 [username]
 # Show only when SSH'd into a remote box or running as root — hide on the
@@ -57,12 +68,14 @@ truncation_length = 3
 truncate_to_repo = true
 truncation_symbol = "…/"
 
+{{- if .nerd_font }}
 [directory.substitutions]
 "Documents" = "󰈙 "
 "Downloads" = " "
 "Music" = "󰝚 "
 "Pictures" = " "
 "Developer" = "󰲋 "
+{{- end }}
 
 [git_branch]
 style = "fg:mauve"
@@ -130,7 +143,11 @@ format = '\[[took $duration]($style)\] '
 disabled = false
 time_format = "%H:%M"
 style = "fg:overlay1"
+{{- if .nerd_font }}
 format = '\[[󰥔 $time]($style)\]'
+{{- else }}
+format = '\[[$time]($style)\]'
+{{- end }}
 
 [line_break]
 disabled = false

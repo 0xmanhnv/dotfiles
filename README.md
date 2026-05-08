@@ -96,6 +96,26 @@ so all `run_once_*` scripts are skipped. Add toolchains later if needed:
 sudo apt install nodejs golang-go default-jdk ruby   # Debian/Ubuntu/Kali
 ```
 
+### Nerd Font fallback
+
+The starship prompt and `eza --icons` use Nerd Font glyphs. The default
+`nerd_font: true` matches the primary workstation (Brewfile installs
+`font-jetbrains-mono-nerd-font` on macOS; the Linux `run_once` fetches
+JetBrainsMono from the official Nerd Fonts release).
+
+On a machine where the terminal can't render Nerd Font (plain xterm, Linux
+console, some SSH clients, WSL when the Windows Terminal font isn't a
+Nerd Font), opt out:
+
+```toml
+# ~/.config/chezmoi/chezmoi.toml
+[data]
+nerd_font = false
+```
+
+Then `chezmoi apply`. Starship falls back to ASCII labels (`mac`, `arch`,
+`debian`…) and eza drops `--icons`.
+
 ---
 
 ## What's inside

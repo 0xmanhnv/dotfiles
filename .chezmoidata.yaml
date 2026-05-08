@@ -12,3 +12,18 @@ github_user: "0xmanhnv"
 #   desktop  - default; render all configs including GUI (Ghostty, fonts, ...)
 #   server   - headless; skip GUI configs (Ghostty, etc.)
 profile: "desktop"
+
+# Render Nerd Font glyphs (OS icons, file-type icons, clock) in the starship
+# prompt and use eza --icons. Default true matches the primary workstation
+# (macOS via Brewfile installs the font automatically; Linux's run_once
+# fetches it from the official Nerd Fonts release).
+#
+# Set to false per-machine in ~/.config/chezmoi/chezmoi.toml on terminals
+# that can't render Nerd Font glyphs (plain xterm, Linux console, some SSH
+# clients, WSL when Windows Terminal isn't configured with a Nerd Font):
+#
+#   [data]
+#   nerd_font = false
+#
+# In that mode, starship falls back to ASCII labels and eza drops --icons.
+nerd_font: true
