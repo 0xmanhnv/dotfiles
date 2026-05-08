@@ -169,4 +169,26 @@ elif [[ -f /etc/fedora-release ]]; then
   # rolling-name java-XX-openjdk-devel formulas).
   sudo dnf install -y --skip-unavailable $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/dnf.txt" | tr '\n' ' ')
 fi
+
+# JetBrainsMono Nerd Font — starship's prompt and eza's --icons need Nerd
+# Font glyphs (the boxes you see otherwise are unrenderable codepoints).
+# Brewfile installs font-jetbrains-mono-nerd-font on macOS; on Linux pull
+# the same family from the upstream Nerd Fonts release. Per-user install
+# (no sudo), discovered automatically by fontconfig from ~/.local/share/fonts.
+# Don't forget to also set the font in your terminal emulator.
+nf_dir="$HOME/.local/share/fonts/JetBrainsMonoNerdFont"
+if ! ls "$nf_dir"/*.ttf >/dev/null 2>&1; then
+  echo "==> Installing JetBrainsMono Nerd Font to $nf_dir"
+  mkdir -p "$nf_dir"
+  tmp="$(mktemp -d)"
+  curl -fsSL \
+    "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip" \
+    -o "$tmp/font.zip"
+  unzip -q -o "$tmp/font.zip" -d "$nf_dir"
+  rm -rf "$tmp"
+  if command -v fc-cache >/dev/null 2>&1; then
+    fc-cache -f "$nf_dir" >/dev/null 2>&1 || true
+  fi
+  echo "==> Set your terminal font to 'JetBrainsMono Nerd Font' to render starship/eza icons"
+fi
 {{- end }}
