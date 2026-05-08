@@ -3,6 +3,22 @@
 # present. Each entry guarded so a fresh machine without these tools doesn't
 # get a polluted PATH or a failing source.
 
+# TERM safety: SSH and tmux propagate the local terminal's $TERM (e.g.
+# xterm-ghostty, alacritty, wezterm) to remote/inner shells, but the
+# remote box may not have the matching terminfo entry. With an unknown
+# TERM, zle's cursor / width math goes wrong on every keystroke and the
+# visible buffer drifts from zsh's internal buffer (typing `ls` shows
+# `llslsls` etc.). Fall back to xterm-256color, which is universally
+# present, when infocmp can't resolve the current TERM.
+if [[ -n "${TERM:-}" && "$TERM" != "dumb" ]] && \
+   command -v infocmp >/dev/null 2>&1 && \
+   ! infocmp -- "$TERM" >/dev/null 2>&1; then
+  print -u2 "warning: terminfo missing for TERM=$TERM, falling back to xterm-256color"
+  print -u2 "  install the proper terminfo to unlock all features, e.g.:"
+  print -u2 "    infocmp -x $TERM 2>/dev/null || curl … | tic -x -"
+  export TERM=xterm-256color
+fi
+
 # Rust / Cargo
 [[ -s "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
 
