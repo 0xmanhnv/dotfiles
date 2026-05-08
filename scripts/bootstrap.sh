@@ -95,11 +95,22 @@ EOF
   fi
 fi
 
-echo "==> Installing chezmoi and applying dotfiles"
+echo "==> Installing chezmoi to ~/.local/bin"
+INSTALL_DIR="$HOME/.local/bin"
+mkdir -p "$INSTALL_DIR"
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$INSTALL_DIR" init "$GITHUB_USER"
+CHEZMOI="$INSTALL_DIR/chezmoi"
+
+# Use `chezmoi update` (= git pull + apply) instead of `init --apply`.
+# init --apply does NOT pull on existing source dirs — re-running bootstrap
+# on a machine that already has ~/.local/share/chezmoi would silently use
+# the stale checkout and miss upstream commits. update always pulls first.
+echo "==> Pulling latest dotfiles and applying"
 if [[ "$MINIMAL" == "1" ]]; then
-  sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --exclude=scripts "$GITHUB_USER"
+  "$CHEZMOI" update --exclude=scripts
 else
-  sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply "$GITHUB_USER"
+  "$CHEZMOI" update
 fi
 
 echo "==> Done. Open a new terminal (or 'exec zsh')."
+echo "    chezmoi binary: $CHEZMOI (~/.local/bin is on PATH via dot_config/zsh/10-path.zsh)"
