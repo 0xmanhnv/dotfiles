@@ -48,7 +48,9 @@ if command -v fzf >/dev/null 2>&1; then
       /usr/share/fzf/key-bindings.zsh \
       /usr/share/fzf/completion.zsh \
       /opt/homebrew/opt/fzf/shell/key-bindings.zsh \
-      /opt/homebrew/opt/fzf/shell/completion.zsh; do
+      /opt/homebrew/opt/fzf/shell/completion.zsh \
+      /usr/local/opt/fzf/shell/key-bindings.zsh \
+      /usr/local/opt/fzf/shell/completion.zsh; do
       [[ -r "$_fzf_init" ]] && source "$_fzf_init"
     done
     unset _fzf_init

@@ -1,5 +1,3 @@
-tap "homebrew/bundle"
-
 # Core CLI
 brew "git"
 brew "gh"

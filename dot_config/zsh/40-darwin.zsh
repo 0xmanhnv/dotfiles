@@ -26,8 +26,8 @@ _prepend_cellar_latest() {
 
 # Pinned-version Cellar tools (preferred over default brew shims)
 if [[ -n "${BREW_PREFIX:-}" ]]; then
-  for pkg in inetutils nginx cloudtrail-cli binutils binwalk rlwrap bison \
-             freerdp wireguard-tools gemini-cli neovim 'ruby@3.4'; do
+  for pkg in inetutils nginx binutils binwalk rlwrap bison \
+             freerdp wireguard-tools neovim 'ruby@3.4'; do
     _prepend_cellar_latest "$pkg"
   done
 

@@ -28,8 +28,12 @@ if [[ -f /etc/debian_version ]]; then
   fi
 
   # GitHub CLI: not in default Debian/Ubuntu/Kali apt repos. Add the official
-  # cli.github.com apt source before installing.
-  if [[ ! -f /etc/apt/sources.list.d/github-cli.list ]]; then
+  # cli.github.com apt source before installing. Gate on BOTH the keyring and
+  # the .list file so re-running after partial cleanup (e.g. user deleted just
+  # the keyring) re-creates whatever is missing rather than silently leaving
+  # apt with a dangling signed-by reference.
+  if [[ ! -f /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+     || ! -f /etc/apt/sources.list.d/github-cli.list ]]; then
     echo "==> Setting up GitHub CLI apt repo"
     sudo mkdir -p -m 755 /etc/apt/keyrings
     curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
@@ -101,7 +105,7 @@ if [[ -f /etc/debian_version ]]; then
     sudo mkdir -p -m 755 /etc/apt/keyrings
     curl -fsSL https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | \
       sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
-    echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | \
+    echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] https://deb.gierens.de stable main" | \
       sudo tee /etc/apt/sources.list.d/gierens.list >/dev/null
     sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
     sudo apt-get update
@@ -142,14 +146,35 @@ if [[ -f /etc/debian_version ]]; then
   # neovim fallback: follow the upstream pre-built tarball recipe from
   # https://neovim.io/doc/install/ verbatim — extract to /opt and let the
   # PATH entry in dot_config/zsh/40-linux.zsh pick it up.
-  # Parrot lory at one point shipped neovim metadata without an installation
-  # candidate, so apt-get install has nothing to do.
+  #
+  # Trigger conditions (any one):
+  #   - apt has no candidate at all (Parrot lory ships nvim metadata without
+  #     an installable version)
+  #   - apt's candidate is < 0.10 (Ubuntu 24.04 ships 0.9.5; LazyVim, the
+  #     config in dot_config/nvim/, requires 0.10+ and refuses to start)
   case "$(uname -m)" in
     x86_64) nvim_arch=x86_64 ;;
     aarch64|arm64) nvim_arch=arm64 ;;
     *) nvim_arch="" ;;
   esac
-  if is_missing neovim && [[ -n "$nvim_arch" && ! -x "/opt/nvim-linux-${nvim_arch}/bin/nvim" ]]; then
+
+  nvim_too_old=0
+  if ! is_missing neovim && command -v nvim >/dev/null 2>&1; then
+    nvim_ver="$(nvim --version 2>/dev/null | awk 'NR==1 {sub(/^v/,"",$2); print $2}')"
+    if [[ -n "$nvim_ver" ]]; then
+      nvim_major="${nvim_ver%%.*}"
+      rest="${nvim_ver#*.}"
+      nvim_minor="${rest%%.*}"
+      if (( nvim_major == 0 && nvim_minor < 10 )); then
+        echo "==> apt's neovim ($nvim_ver) is older than 0.10 — installing tarball alongside"
+        nvim_too_old=1
+      fi
+    fi
+  fi
+
+  if [[ -n "$nvim_arch" ]] && \
+     { is_missing neovim || (( nvim_too_old )); } && \
+     [[ ! -x "/opt/nvim-linux-${nvim_arch}/bin/nvim" ]]; then
     echo "==> Installing neovim from upstream tarball (neovim.io recipe)"
     tmp="$(mktemp -d)"
     curl -fsSL \
