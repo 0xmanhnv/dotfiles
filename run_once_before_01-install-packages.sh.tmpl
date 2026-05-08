@@ -58,8 +58,12 @@ if [[ -f /etc/debian_version ]]; then
   missing=()
   while IFS= read -r pkg; do
     [[ -z "$pkg" || "$pkg" =~ ^[[:space:]]*# ]] && continue
+    # Don't `exit` from awk on first match: awk would close its stdin,
+    # apt-cache would receive SIGPIPE on its next write, and pipefail+set -e
+    # would abort the whole script with exit 141. apt-cache policy emits
+    # exactly one Candidate line per package, so reading the rest is cheap.
     candidate="$(apt-cache policy "$pkg" 2>/dev/null \
-      | awk '/^[[:space:]]+Candidate:/ {print $2; exit}')"
+      | awk '/^[[:space:]]+Candidate:/ {print $2}')"
     if [[ -n "$candidate" && "$candidate" != "(none)" ]]; then
       available+=("$pkg")
     else
