@@ -97,3 +97,72 @@ jobs:
 
             zsh -lic "type gst >/dev/null && echo zsh-OK; exit"
           '
+
+  # Debian 12 is the explicit target for the apt-cache-policy filter and the
+  # eza/zoxide/yq/openjdk-21 fallback installers — bookworm is the minimal
+  # supported Debian and is what Parrot 6 / Kali 2024.x are based on. The
+  # Ubuntu/Fedora/Kali jobs above don't reliably trigger the fallback paths
+  # because their repos have most of the modern tools.
+  bootstrap-debian-bookworm:
+    name: bootstrap end-to-end (Debian 12 bookworm — exercises fallbacks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply via chezmoi inside Debian bookworm container
+        run: |
+          docker run --rm -v "$PWD:/dotfiles:ro" debian:12-slim bash -c '
+            set -euo pipefail
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qq
+            apt-get install -y -qq curl sudo git ca-certificates gpg
+
+            sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+
+            chezmoi --source=/dotfiles apply --verbose
+
+            echo
+            echo "===== FALLBACK INSTALLER VERIFICATION ====="
+            command -v eza      >/dev/null && echo "✓ eza (deb.gierens.de fallback)"
+            command -v zoxide   >/dev/null && echo "✓ zoxide (install-script fallback)"
+            command -v yq       >/dev/null && echo "✓ yq (GitHub-release fallback)"
+            command -v starship >/dev/null && echo "✓ starship"
+            test -x /opt/nvim-linux-x86_64/bin/nvim && \
+              echo "✓ neovim (tarball fallback for too-old apt nvim)"
+            test -d "$HOME/.local/share/fonts/JetBrainsMonoNerdFont" && \
+              echo "✓ JetBrainsMono Nerd Font installed"
+          '
+
+  # Render-only test for nerd_font=false. No Docker, no chezmoi binary
+  # install via the chezmoi installer — just feed each template through
+  # `chezmoi execute-template` against a temp source dir whose
+  # .chezmoidata.yaml flips the flag, then assert the ASCII branch landed.
+  template-nerd-font-false:
+    name: template render (nerd_font=false ASCII fallback)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install chezmoi
+        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+      - name: Render templates with nerd_font=false and assert ASCII output
+        run: |
+          set -euo pipefail
+          src="$(mktemp -d)"
+          cp -r "$PWD"/. "$src/"
+          sed -i "s/^nerd_font: true/nerd_font: false/" "$src/.chezmoidata.yaml"
+
+          starship_out="$(chezmoi --source="$src" execute-template < "$src/dot_config/starship.toml.tmpl")"
+          ghostty_out="$(chezmoi --source="$src" execute-template < "$src/dot_config/ghostty/config.tmpl")"
+          zshrc_out="$(chezmoi --source="$src" execute-template < "$src/dot_zshrc.tmpl")"
+
+          # Starship: ASCII labels, no clock glyph, no folder substitutions
+          grep -q "^Macos = \"mac\""          <<<"$starship_out" && echo "✓ starship Macos = mac"
+          grep -q "^Debian = \"debian\""      <<<"$starship_out" && echo "✓ starship Debian = debian"
+          ! grep -q "directory.substitutions" <<<"$starship_out" && echo "✓ no directory.substitutions"
+          ! grep -q "󰥔"                       <<<"$starship_out" && echo "✓ no clock glyph"
+
+          # Ghostty: plain JetBrains Mono, not the Nerd Font variant
+          grep -q "^font-family = JetBrains Mono$" <<<"$ghostty_out" && echo "✓ ghostty plain font"
+          ! grep -q "JetBrainsMono Nerd Font"      <<<"$ghostty_out" && echo "✓ no Nerd Font in ghostty"
+
+          # zshrc fzf-tab previews drop --icons
+          ! grep -q "eza .* --icons" <<<"$zshrc_out" && echo "✓ fzf-tab previews drop --icons"
