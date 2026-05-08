@@ -4,8 +4,13 @@
 # file), so we don't duplicate it here.
 set -euo pipefail
 
+# Minimal Docker images and CI runners don't always export USER/SHELL —
+# derive them defensively so `set -u` doesn't abort.
+me="${USER:-$(id -un)}"
+current_shell="${SHELL:-}"
+
 ZSH_PATH="$(command -v zsh || true)"
-if [[ -n "$ZSH_PATH" && "$SHELL" != "$ZSH_PATH" ]]; then
+if [[ -n "$ZSH_PATH" && "$current_shell" != "$ZSH_PATH" ]]; then
   echo "==> Setting zsh as default shell"
   if ! grep -qx "$ZSH_PATH" /etc/shells 2>/dev/null; then
     echo "$ZSH_PATH" | sudo tee -a /etc/shells >/dev/null
@@ -17,16 +22,16 @@ if [[ -n "$ZSH_PATH" && "$SHELL" != "$ZSH_PATH" ]]; then
   # timestamp from the apt/dnf/pacman steps a moment earlier.
   if ! chsh -s "$ZSH_PATH" 2>/dev/null; then
     echo "==> chsh needed elevation, retrying via sudo"
-    sudo chsh -s "$ZSH_PATH" "$USER" || true
+    sudo chsh -s "$ZSH_PATH" "$me" || true
   fi
 
   # Verify by reading /etc/passwd directly — $SHELL still reflects the parent
   # process's shell, not what next login will use. macOS uses Directory
   # Services so getent isn't reliable there; dscl is the correct lookup.
   if [[ "$(uname -s)" == "Darwin" ]]; then
-    current="$(dscl . -read "/Users/$USER" UserShell 2>/dev/null | awk '{print $2}')"
+    current="$(dscl . -read "/Users/$me" UserShell 2>/dev/null | awk '{print $2}')"
   else
-    current="$(getent passwd "$USER" | cut -d: -f7)"
+    current="$(getent passwd "$me" | cut -d: -f7)"
   fi
 
   if [[ "$current" != "$ZSH_PATH" ]]; then
