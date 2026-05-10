@@ -18,13 +18,56 @@
 --      stops at oil).
 return {
   "coder/claudecode.nvim",
+  dependencies = { "folke/snacks.nvim" },
+
+  -- Lazy-loaded via keys (default behavior)
+
+  ---@module "claudecode"
+  ---@type ClaudeCode.Config
   opts = {
+    -- ===== Terminal: where Claude window opens and its size =====
+    terminal = {
+      -- Use snacks.nvim as the terminal provider (nicer UI, supports float)
+      provider = "snacks",
+
+      -- Position and size of the split on the right
+      split_side = "right",
+      split_width_percentage = 0.35, -- 35% of screen width, wide enough to read
+
+      -- Auto-close behavior when Claude exits
+      auto_close = false, -- keep window open to inspect errors if any
+
+      -- Use snacks float window for a nicer UX (optional)
+      -- Uncomment the block below to use a floating window instead of a split
+      -- snacks_win_opts = {
+      --     position = "float",
+      --     width = 0.5,
+      --     height = 0.9,
+      --     border = "rounded",
+      --     keys = {
+      --         claude_hide = {
+      --             "<C-,>",
+      --             function(self) self:hide() end,
+      --             mode = { "n", "t" },
+      --             desc = "Hide Claude",
+      --         },
+      --     },
+      -- },
+    },
     models = {
       { name = "Claude Opus 4.7 (Latest)", value = "opus" },
       { name = "Claude Sonnet 4.6 (Latest)", value = "sonnet" },
       { name = "Opusplan: Claude Opus 4.7 (Latest) + Sonnet 4.6 (Latest)", value = "opusplan" },
       { name = "Claude Haiku 4.5 (Latest)", value = "haiku" },
     },
+    -- ===== smart cwd resolution =====
+    cwd_provider = function(ctx)
+      -- Prefer git root of the current file, fallback to file's dir or Neovim cwd
+      local cwd = require("claudecode.cwd").git_root(ctx.file_dir or ctx.cwd)
+        or ctx.file_dir
+        or ctx.cwd
+      return cwd
+    end,
   },
   keys = {
     { "<leader>am", "<cmd>ClaudeCodeSelectModel<cr>", desc = "Select Claude model" },

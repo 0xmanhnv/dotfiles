@@ -5,6 +5,7 @@ return {
     library = {
       { path = "${3rd}/luv/library", words = { "vim%.uv" } },
       { path = "render-markdown.nvim/lua", words = { "render%.md" } },
+      { path = "claudecode.nvim/lua", words = { "ClaudeCode" } },
     },
   },
 }
