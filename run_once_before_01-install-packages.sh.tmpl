@@ -160,8 +160,11 @@ if [[ -f /etc/debian_version ]]; then
   fi
 
   # lazygit + glow: not in Debian/Ubuntu/Kali apt repos. Pull from GitHub
-  # releases — single static binary inside a tarball each. Use grep over
-  # API output instead of jq to avoid an ordering dependency on jq itself.
+  # releases — single static binary inside a tarball each. Layout differs
+  # per project (lazygit's binary is at archive root; glow's is nested in a
+  # versioned subdir), so extract the whole tarball into a temp dir and
+  # find the binary by name. Use grep over API output instead of jq to
+  # avoid an ordering dependency on jq itself.
   install_github_tarball_binary() {
     local repo="$1" binary="$2" arch
     arch="$(uname -m)"
@@ -181,8 +184,15 @@ if [[ -f /etc/debian_version ]]; then
     curl -fsSL \
       "https://github.com/${repo}/releases/download/v${ver}/${binary}_${ver}_Linux_${arch}.tar.gz" \
       -o "$tmp/x.tar.gz"
-    sudo tar -xzf "$tmp/x.tar.gz" -C /usr/local/bin "$binary"
-    sudo chmod +x "/usr/local/bin/$binary"
+    tar -xzf "$tmp/x.tar.gz" -C "$tmp"
+    local found
+    found="$(find "$tmp" -type f -name "$binary" | head -1)"
+    if [[ -z "$found" ]]; then
+      echo "WARNING: $binary not found in extracted tarball — skipping" >&2
+      rm -rf "$tmp"
+      return 0
+    fi
+    sudo install -m 0755 "$found" "/usr/local/bin/$binary"
     rm -rf "$tmp"
   }
 
