@@ -17,7 +17,7 @@
   "mason.nvim": { "branch": "main", "commit": "e54f5bf5f12c560da31c17eee5b3e1bd369f3ff9" },
   "mini.ai": { "branch": "main", "commit": "7e10ce8468c0fce4f527ae2c0e5c484f7667f73d" },
   "mini.icons": { "branch": "main", "commit": "bac6317300e205335df425296570d84322730067" },
-  "mini.nvim": { "branch": "main", "commit": "60b5aaac2f0465d67699702e76b9baebf52cb42f" },
+  "mini.nvim": { "branch": "main", "commit": "a5fda91040763cf9ad70bdce1c656b0f4ba1d16e" },
   "mini.pairs": { "branch": "main", "commit": "42387c7fe68fc0b6e95eaf37f1bb76e7bffaa0d9" },
   "noice.nvim": { "branch": "main", "commit": "7bfd942445fb63089b59f97ca487d605e715f155" },
   "nui.nvim": { "branch": "main", "commit": "de740991c12411b663994b2860f1a4fd0937c130" },
@@ -34,5 +34,6 @@
   "tokyonight.nvim": { "branch": "main", "commit": "cdc07ac78467a233fd62c493de29a17e0cf2b2b6" },
   "trouble.nvim": { "branch": "main", "commit": "bd67efe408d4816e25e8491cc5ad4088e708a69a" },
   "ts-comments.nvim": { "branch": "main", "commit": "123a9fb12e7229342f807ec9e6de478b1102b041" },
+  "vim-tmux-navigator": { "branch": "master", "commit": "e41c431a0c7b7388ae7ba341f01a0d217eb3a432" },
   "which-key.nvim": { "branch": "main", "commit": "3aab2147e74890957785941f0c1ad87d0a44c15a" }
 }
