@@ -159,6 +159,42 @@ if [[ -f /etc/debian_version ]]; then
     sudo chmod +x /usr/local/bin/yq
   fi
 
+  # lazygit + glow: not in Debian/Ubuntu/Kali apt repos. Pull from GitHub
+  # releases — single static binary inside a tarball each. Use grep over
+  # API output instead of jq to avoid an ordering dependency on jq itself.
+  install_github_tarball_binary() {
+    local repo="$1" binary="$2" arch
+    arch="$(uname -m)"
+    case "$arch" in
+      aarch64|arm64) arch=arm64 ;;
+      x86_64|amd64)  arch=x86_64 ;;
+    esac
+    local ver
+    ver="$(curl -fsSL "https://api.github.com/repos/${repo}/releases/latest" \
+      | grep -oE '"tag_name":\s*"v?[^"]+"' \
+      | head -1 | sed -E 's/.*"v?([^"]+)"/\1/')"
+    if [[ -z "$ver" ]]; then
+      echo "WARNING: couldn't resolve latest version for $repo — skipping" >&2
+      return 0
+    fi
+    local tmp; tmp="$(mktemp -d)"
+    curl -fsSL \
+      "https://github.com/${repo}/releases/download/v${ver}/${binary}_${ver}_Linux_${arch}.tar.gz" \
+      -o "$tmp/x.tar.gz"
+    sudo tar -xzf "$tmp/x.tar.gz" -C /usr/local/bin "$binary"
+    sudo chmod +x "/usr/local/bin/$binary"
+    rm -rf "$tmp"
+  }
+
+  if is_missing lazygit && ! command -v lazygit >/dev/null 2>&1; then
+    echo "==> Installing lazygit from GitHub releases"
+    install_github_tarball_binary jesseduffield/lazygit lazygit
+  fi
+  if is_missing glow && ! command -v glow >/dev/null 2>&1; then
+    echo "==> Installing glow from GitHub releases"
+    install_github_tarball_binary charmbracelet/glow glow
+  fi
+
   # openjdk-21 fallback: distros that don't ship the explicit -21 metapackage
   # (Debian 12, Parrot 6, Kali 2024.x) get default-jdk instead.
   if is_missing openjdk-21-jdk && ! command -v javac >/dev/null 2>&1; then
@@ -227,19 +263,25 @@ elif [[ -f /etc/fedora-release ]]; then
 {{ end -}}
 fi
 
-# --- Docker post-install (Linux) -------------------------------------------
-# Enable + start the daemon and add the current user to the `docker` group so
-# `docker` runs without sudo. Re-login (or `newgrp docker`) is needed for the
-# group change to take effect in the active shell.
-if command -v docker >/dev/null 2>&1 && command -v systemctl >/dev/null 2>&1; then
+# --- Docker post-install (Linux, real hosts only) --------------------------
+# Skip in Docker / CI containers — there's no systemd to enable, and adding
+# root (the typical container user) to the docker group is meaningless.
+# Real hosts: enable docker.service and add the current user to the docker
+# group so `docker` runs without sudo. Re-login or `newgrp docker` to apply.
+if [[ ! -f /.dockerenv ]] && [[ "${CI:-}" != "true" ]] \
+   && command -v docker >/dev/null 2>&1 \
+   && command -v systemctl >/dev/null 2>&1; then
   if systemctl list-unit-files docker.service >/dev/null 2>&1 \
      && ! systemctl is-enabled --quiet docker.service; then
     echo "==> Enabling docker.service"
     sudo systemctl enable --now docker.service || true
   fi
-  if ! id -nG "$USER" | tr ' ' '\n' | grep -qx docker; then
-    echo "==> Adding $USER to docker group (re-login or 'newgrp docker' to apply)"
-    sudo usermod -aG docker "$USER" || true
+  # id -un works whether $USER is set or not (set -u doesn't trip on it).
+  docker_user="$(id -un)"
+  if [[ "$docker_user" != "root" ]] \
+     && ! id -nG "$docker_user" | tr ' ' '\n' | grep -qx docker; then
+    echo "==> Adding $docker_user to docker group (re-login or 'newgrp docker' to apply)"
+    sudo usermod -aG docker "$docker_user" || true
   fi
 fi
 
