@@ -13,9 +13,16 @@
 if [[ -n "${TERM:-}" && "$TERM" != "dumb" ]] && \
    command -v infocmp >/dev/null 2>&1 && \
    ! infocmp -- "$TERM" >/dev/null 2>&1; then
-  print -u2 "warning: terminfo missing for TERM=$TERM, falling back to xterm-256color"
-  print -u2 "  install the proper terminfo to unlock all features, e.g.:"
-  print -u2 "    infocmp -x $TERM 2>/dev/null || curl … | tic -x -"
+  # Only print the warning in interactive shells. zshenv runs for every
+  # non-interactive invocation too (scripts, `ssh host 'cmd'`, cron jobs);
+  # noisy stderr would break callers that grep / parse stderr. The TERM
+  # swap itself stays unconditional — cursor / width math breaks the same
+  # way regardless of interactivity.
+  if [[ -o interactive ]]; then
+    print -u2 "warning: terminfo missing for TERM=$TERM, falling back to xterm-256color"
+    print -u2 "  install the proper terminfo to unlock all features, e.g.:"
+    print -u2 "    infocmp -x $TERM 2>/dev/null || curl … | tic -x -"
+  fi
   export TERM=xterm-256color
 fi
 

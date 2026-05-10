@@ -59,8 +59,8 @@ if [[ -f "$SSH_CFG" ]] && grep -qE '^Host [^*]' "$SSH_CFG"; then
     echo "==> Extracting non-default SSH host entries → ~/.ssh/config.local"
     awk '/^Host \*/{flag=1} /^Host [^*]/{flag=0} !flag' "$SSH_CFG" > "$SSH_LOCAL"
     chmod 600 "$SSH_LOCAL"
-    n=$(grep -c '^Host ' "$SSH_LOCAL" || echo 0)
-    echo "    wrote $n host entries"
+    n=$(grep -c '^Host ' "$SSH_LOCAL" || true)
+    echo "    wrote ${n:-0} host entries"
   fi
 fi
 

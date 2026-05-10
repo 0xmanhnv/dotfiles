@@ -154,11 +154,11 @@ jobs:
           ghostty_out="$(chezmoi --source="$src" execute-template < "$src/dot_config/ghostty/config.tmpl")"
           zshrc_out="$(chezmoi --source="$src" execute-template < "$src/dot_zshrc.tmpl")"
 
-          # Starship: ASCII labels, no clock glyph, no folder substitutions
-          grep -q "^Macos = \"mac\""          <<<"$starship_out" && echo "✓ starship Macos = mac"
-          grep -q "^Debian = \"debian\""      <<<"$starship_out" && echo "✓ starship Debian = debian"
-          ! grep -q "directory.substitutions" <<<"$starship_out" && echo "✓ no directory.substitutions"
-          ! grep -q "󰥔"                       <<<"$starship_out" && echo "✓ no clock glyph"
+          # Starship: ASCII labels, no clock glyph, no Nerd Font OS icons
+          grep -q "^Macos = \"mac\""     <<<"$starship_out" && echo "✓ starship Macos = mac"
+          grep -q "^Debian = \"debian\"" <<<"$starship_out" && echo "✓ starship Debian = debian"
+          ! grep -q "󰥔"                  <<<"$starship_out" && echo "✓ no clock glyph"
+          ! grep -q "󰀵"                  <<<"$starship_out" && echo "✓ no macos nerd glyph"
 
           # Ghostty: plain JetBrains Mono, not the Nerd Font variant
           grep -q "^font-family = JetBrains Mono$" <<<"$ghostty_out" && echo "✓ ghostty plain font"

@@ -1,9 +1,12 @@
+-- Extra keymaps on top of LazyVim's lazyvim.plugins.extras.ai.claudecode
+-- (which loads the plugin with default config + the <leader>a group label).
+-- lazy.nvim merges multiple specs for the same plugin, so we just add keys
+-- here — no need to redeclare `dependencies = { "folke/snacks.nvim" }` or
+-- `config = true`, and no `<leader>a` group entry (the extra owns that,
+-- and registering it twice triggers a which-key duplicate warning).
 return {
   "coder/claudecode.nvim",
-  dependencies = { "folke/snacks.nvim" },
-  config = true,
   keys = {
-    { "<leader>a", nil, desc = "AI/Claude Code" },
     { "<leader>ac", "<cmd>ClaudeCode<cr>", desc = "Toggle Claude" },
     { "<leader>af", "<cmd>ClaudeCodeFocus<cr>", desc = "Focus Claude" },
     { "<leader>ar", "<cmd>ClaudeCode --resume<cr>", desc = "Resume Claude" },

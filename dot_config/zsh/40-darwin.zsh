@@ -77,6 +77,6 @@ if [[ -d "$HOME/Library/Android/sdk" ]]; then
 fi
 
 # Ghostty shell integration (Ghostty exports GHOSTTY_RESOURCES_DIR when launching zsh)
-if [[ -n "$GHOSTTY_RESOURCES_DIR" && -f "$GHOSTTY_RESOURCES_DIR/shell-integration/zsh/ghostty.zsh" ]]; then
+if [[ -n "${GHOSTTY_RESOURCES_DIR:-}" && -f "$GHOSTTY_RESOURCES_DIR/shell-integration/zsh/ghostty.zsh" ]]; then
   source "$GHOSTTY_RESOURCES_DIR/shell-integration/zsh/ghostty.zsh"
 fi

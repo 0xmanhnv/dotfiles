@@ -162,19 +162,19 @@ local terminal.
 │   ├── pacman.txt                     Arch
 │   └── dnf.txt                        Fedora
 │
-├── .chezmoidata.yaml                  Variables (name, email, github_user)
+├── .chezmoidata.yaml                  Variables (identity + nerd_font + slow_terminal flags)
 ├── .chezmoiignore                     Per-OS file filters
 │
-├── dot_zshrc                          Loader: pure zsh + Starship + 4 plugins (no OMZ)
-├── dot_zshenv                         Pre-shell PATH (cargo, foundry — both guarded)
+├── dot_zshrc.tmpl                     Loader: pure zsh + Starship + 4 plugins (gates fzf-tab --icons + syntax-highlighting via flags)
+├── dot_zshenv                         Pre-shell PATH (cargo, foundry — both guarded) + TERM safety fallback
 ├── dot_gitconfig.tmpl                 Git config (templated identity, points at ~/.gitignore_global)
 ├── dot_gitignore_global               Patterns ignored in EVERY git repo (.DS_Store, IDE state, *.local, ...)
 ├── dot_tmux.conf                      tmux + auto-install TPM
 │
 ├── dot_config/
 │   ├── nvim/                          LazyVim distro + snacks dashboard (Buddha banner)
-│   ├── ghostty/config                 macOS — terminal emulator
-│   ├── starship.toml                  Custom Catppuccin Mocha prompt
+│   ├── ghostty/config.tmpl            Cross-OS terminal emulator (font gated by nerd_font)
+│   ├── starship.toml.tmpl             Custom Catppuccin Mocha prompt (OS/clock glyphs gated by nerd_font)
 │   ├── zellij/config.kdl              Multiplexer (alternative to tmux)
 │   └── zsh/                           Modular shell config (see below)
 │
