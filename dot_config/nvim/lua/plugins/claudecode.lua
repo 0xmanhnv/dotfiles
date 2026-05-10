@@ -6,6 +6,18 @@
 -- and registering it twice triggers a which-key duplicate warning).
 return {
   "coder/claudecode.nvim",
+  -- Override the plugin's hard-coded model labels (claudecode.nvim:config.lua
+  -- still ships "Opus 4.1 / Sonnet 4.5"). The `value` aliases unchanged —
+  -- Claude Code CLI resolves them to the actual latest at invocation time —
+  -- so this only freshens the picker labels for ClaudeCodeSelectModel.
+  opts = {
+    models = {
+      { name = "Claude Opus 4.7 (Latest)", value = "opus" },
+      { name = "Claude Sonnet 4.6 (Latest)", value = "sonnet" },
+      { name = "Opusplan: Claude Opus 4.7 (Latest) + Sonnet 4.6 (Latest)", value = "opusplan" },
+      { name = "Claude Haiku 4.5 (Latest)", value = "haiku" },
+    },
+  },
   keys = {
     { "<leader>ac", "<cmd>ClaudeCode<cr>", desc = "Toggle Claude" },
     { "<leader>af", "<cmd>ClaudeCodeFocus<cr>", desc = "Focus Claude" },
