@@ -19,6 +19,7 @@ Desktop.ini
 # Editor project metadata for THIS repo (don't track IDE state of dotfiles itself)
 .vscode/
 .idea/
+.claude/
 
 # Logs
 *.log

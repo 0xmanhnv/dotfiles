@@ -3,6 +3,7 @@ LICENSE
 scripts/**
 Brewfile
 packages/**
+docs/**
 .gitignore
 
 {{- if ne .chezmoi.os "darwin" }}

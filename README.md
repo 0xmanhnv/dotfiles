@@ -175,7 +175,6 @@ local terminal.
 │   ├── nvim/                          LazyVim distro + snacks dashboard (Buddha banner)
 │   ├── ghostty/config.tmpl            Cross-OS terminal emulator (font gated by nerd_font)
 │   ├── starship.toml.tmpl             Custom Catppuccin Mocha prompt (OS/clock glyphs gated by nerd_font)
-│   ├── zellij/config.kdl              Multiplexer (alternative to tmux)
 │   └── zsh/                           Modular shell config (see below)
 │
 ├── private_dot_ssh/config.tmpl        SSH client (0600, Include config.local for hosts)
@@ -387,7 +386,7 @@ real macOS GUI. Options:
 | Shell       | zsh + [starship](https://starship.rs/) + 4 plugins ([zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions), [fzf-tab](https://github.com/Aloxaf/fzf-tab), [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting), [zsh-history-substring-search](https://github.com/zsh-users/zsh-history-substring-search)) — no framework |
 | Editor      | [Neovim](https://neovim.io/) + [LazyVim](https://www.lazyvim.org/) + [snacks.nvim](https://github.com/folke/snacks.nvim) explorer/dashboard/picker |
 | Terminal    | [Ghostty](https://ghostty.org/) (macOS) — Catppuccin Mocha theme    |
-| Multiplexer | [tmux](https://github.com/tmux/tmux) + [TPM](https://github.com/tmux-plugins/tpm), and/or [Zellij](https://zellij.dev/) |
+| Multiplexer | [tmux](https://github.com/tmux/tmux) + [TPM](https://github.com/tmux-plugins/tpm) — see [docs/nvim-tmux.md](docs/nvim-tmux.md) for the Neovim+tmux workflow |
 | Prompt      | [Starship](https://starship.rs/) — custom Catppuccin Mocha config (info-rich, no segments) |
 | CLI tools   | [eza](https://github.com/eza-community/eza), [bat](https://github.com/sharkdp/bat), [ripgrep](https://github.com/BurntSushi/ripgrep), [fd](https://github.com/sharkdp/fd), [fzf](https://github.com/junegunn/fzf), [zoxide](https://github.com/ajeetdsouza/zoxide), [jq](https://jqlang.org/), [gh](https://cli.github.com/) |
 | Languages   | Java (openjdk@25 macOS / 21 LTS Linux) + jenv, Node 24 LTS, Go latest, Python 3.13, Ruby 3.4, Rust stable (rustup) |
