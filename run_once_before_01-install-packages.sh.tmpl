@@ -20,6 +20,24 @@ brew bundle --file="{{ .chezmoi.sourceDir }}/Brewfile.pentest"
 {{ end -}}
 {{ else if eq .chezmoi.os "linux" -}}
 echo "==> Installing Linux packages"
+
+# If Docker is already installed (e.g., user installed Docker CE from
+# download.docker.com), skip our distro-package Docker entries. Docker CE's
+# `containerd.io` conflicts with `docker.io`'s `containerd` dep, so apt
+# can't resolve them together. Same conflict shape on Fedora/Arch with
+# moby-engine vs. docker-ce.
+DOCKER_PRESENT=0
+if command -v docker >/dev/null 2>&1; then
+  DOCKER_PRESENT=1
+  echo "==> Docker already present ($(docker --version 2>/dev/null | head -1)) — skipping distro Docker pkgs"
+fi
+is_docker_pkg() {
+  case "$1" in
+    docker|docker.io|docker-compose|docker-compose-v2|docker-buildx|moby-engine) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 if [[ -f /etc/debian_version ]]; then
   # NodeSource only for Ubuntu/Debian proper — apt's nodejs there is typically
   # v18, way too old. Kali/Parrot are rolling-release Debian derivatives that
@@ -66,6 +84,7 @@ if [[ -f /etc/debian_version ]]; then
   missing=()
   while IFS= read -r pkg; do
     [[ -z "$pkg" || "$pkg" =~ ^[[:space:]]*# ]] && continue
+    (( DOCKER_PRESENT )) && is_docker_pkg "$pkg" && continue
     # Don't `exit` from awk on first match: awk would close its stdin,
     # apt-cache would receive SIGPIPE on its next write, and pipefail+set -e
     # would abort the whole script with exit 141. apt-cache policy emits
@@ -256,7 +275,11 @@ if [[ -f /etc/debian_version ]]; then
     echo "WARNING: arch $(uname -m) unsupported for neovim tarball — install manually" >&2
   fi
 elif [[ -f /etc/arch-release ]]; then
-  sudo pacman -Sy --noconfirm --needed $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/pacman.txt" | tr '\n' ' ')
+  pac_pkgs="$(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/pacman.txt")"
+  if (( DOCKER_PRESENT )); then
+    pac_pkgs="$(echo "$pac_pkgs" | grep -vxE 'docker|docker-compose|docker-buildx')"
+  fi
+  sudo pacman -Sy --noconfirm --needed $(echo "$pac_pkgs" | tr '\n' ' ')
 {{ if .pentest -}}
   echo "==> Installing pentest toolkit (pentest flag = true)"
   sudo pacman -S --noconfirm --needed $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/pacman.pentest.txt" | tr '\n' ' ') || \
@@ -266,7 +289,11 @@ elif [[ -f /etc/fedora-release ]]; then
   # --skip-unavailable: don't fail the whole transaction if a single package
   # has been renamed / removed in this Fedora release (common for the
   # rolling-name java-XX-openjdk-devel formulas).
-  sudo dnf install -y --skip-unavailable $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/dnf.txt" | tr '\n' ' ')
+  dnf_pkgs="$(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/dnf.txt")"
+  if (( DOCKER_PRESENT )); then
+    dnf_pkgs="$(echo "$dnf_pkgs" | grep -vxE 'moby-engine|docker-compose')"
+  fi
+  sudo dnf install -y --skip-unavailable $(echo "$dnf_pkgs" | tr '\n' ' ')
 {{ if .pentest -}}
   echo "==> Installing pentest toolkit (pentest flag = true)"
   sudo dnf install -y --skip-unavailable $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/dnf.pentest.txt" | tr '\n' ' ')
