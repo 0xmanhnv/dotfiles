@@ -9,9 +9,22 @@ set -euo pipefail
 me="${USER:-$(id -un)}"
 current_shell="${SHELL:-}"
 
+# Compare by basename + check the actual passwd entry, not by full path:
+# - $SHELL might be /bin/zsh (system) while command -v finds /opt/homebrew/
+#   bin/zsh (brew) — both ARE zsh, but a path-equality check would falsely
+#   flag the system one as wrong and trigger chsh on every apply
+# - $SHELL only reflects the parent process; the login shell of record lives
+#   in /etc/passwd (Linux) or Directory Services (macOS). Read that.
 ZSH_PATH="$(command -v zsh || true)"
-if [[ -n "$ZSH_PATH" && "$current_shell" != "$ZSH_PATH" ]]; then
-  echo "==> Setting zsh as default shell"
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  passwd_shell="$(dscl . -read "/Users/$me" UserShell 2>/dev/null | awk '{print $2}')"
+else
+  passwd_shell="$(getent passwd "$me" 2>/dev/null | cut -d: -f7)"
+fi
+passwd_basename="$(basename "${passwd_shell:-/bin/sh}")"
+
+if [[ -n "$ZSH_PATH" && "$passwd_basename" != "zsh" ]]; then
+  echo "==> Setting zsh as default shell (current: $passwd_shell)"
   if ! grep -qx "$ZSH_PATH" /etc/shells 2>/dev/null; then
     echo "$ZSH_PATH" | sudo tee -a /etc/shells >/dev/null
   fi
@@ -25,17 +38,15 @@ if [[ -n "$ZSH_PATH" && "$current_shell" != "$ZSH_PATH" ]]; then
     sudo chsh -s "$ZSH_PATH" "$me" || true
   fi
 
-  # Verify by reading /etc/passwd directly — $SHELL still reflects the parent
-  # process's shell, not what next login will use. macOS uses Directory
-  # Services so getent isn't reliable there; dscl is the correct lookup.
+  # Re-read the passwd entry to verify the change actually stuck.
   if [[ "$(uname -s)" == "Darwin" ]]; then
     current="$(dscl . -read "/Users/$me" UserShell 2>/dev/null | awk '{print $2}')"
   else
     current="$(getent passwd "$me" | cut -d: -f7)"
   fi
 
-  if [[ "$current" != "$ZSH_PATH" ]]; then
-    echo "WARNING: login shell is still '$current', not '$ZSH_PATH'." >&2
+  if [[ "$(basename "${current:-/bin/sh}")" != "zsh" ]]; then
+    echo "WARNING: login shell is still '$current', not a zsh." >&2
     echo "  Run manually:  chsh -s '$ZSH_PATH'" >&2
   else
     echo "==> Default shell set to zsh (effective on next login)"
