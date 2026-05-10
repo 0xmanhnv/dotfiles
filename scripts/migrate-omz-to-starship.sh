@@ -86,33 +86,37 @@ else
 fi
 echo "==> Wrote ~/.config/zsh/ (5 modules)"
 
-# --- 5. Starship config -----------------------------------------------------
-# starship.toml is a chezmoi template (gates Nerd Font glyphs vs ASCII via
-# the .nerd_font data var). This script doesn't go through chezmoi, so render
-# the template via `chezmoi execute-template` if available; otherwise bake
-# nerd_font=true (matching the upstream default).
+# --- 5. Render chezmoi templates --------------------------------------------
+# Several files are chezmoi templates (gate Nerd Font glyphs / slow-terminal
+# plugin loading via .chezmoidata.yaml). This script doesn't go through
+# chezmoi, so render via `chezmoi execute-template` when available; otherwise
+# strip {{- if … }} / {{- else }} / {{- end }} blocks and keep the FIRST
+# branch (matches every default in .chezmoidata.yaml: nerd_font=true,
+# slow_terminal=false → both `if` opens evaluate to true).
+render_template() {
+  local src="$1" dst="$2"
+  if command -v chezmoi >/dev/null 2>&1; then
+    chezmoi execute-template < "$src" > "$dst"
+  else
+    awk '
+      /{{- if /  { mode="if";   next }
+      /{{- else/ { mode="else"; next }
+      /{{- end/  { mode="";     next }
+      mode != "else" { print }
+    ' "$src" > "$dst"
+  fi
+}
+
 mkdir -p "$HOME/.config"
 if [[ -f "$HOME/.config/starship.toml" ]]; then
   echo "==> ~/.config/starship.toml already exists — leaving alone"
 else
-  STARSHIP_SRC="$REPO_ROOT/dot_config/starship.toml.tmpl"
-  if command -v chezmoi >/dev/null 2>&1; then
-    chezmoi execute-template < "$STARSHIP_SRC" > "$HOME/.config/starship.toml"
-  else
-    # Strip {{ if .nerd_font }}…{{ else }}…{{ end }} blocks, keeping the
-    # nerd-font branch (matches the .chezmoidata.yaml default).
-    awk '
-      /{{- if \.nerd_font/ { mode="nerd"; next }
-      /{{- else/           { mode="ascii"; next }
-      /{{- end/            { mode="";    next }
-      mode != "ascii"      { print }
-    ' "$STARSHIP_SRC" > "$HOME/.config/starship.toml"
-  fi
-  echo "==> Wrote ~/.config/starship.toml (Nerd Font variant)"
+  render_template "$REPO_ROOT/dot_config/starship.toml.tmpl" "$HOME/.config/starship.toml"
+  echo "==> Wrote ~/.config/starship.toml (defaults branch)"
 fi
 
-# --- 6. Replace ~/.zshrc ----------------------------------------------------
-cp -p "$REPO_ROOT/dot_zshrc" "$HOME/.zshrc"
+# --- 6. Replace ~/.zshrc (also a chezmoi template) --------------------------
+render_template "$REPO_ROOT/dot_zshrc.tmpl" "$HOME/.zshrc"
 echo "==> Replaced ~/.zshrc with pure-zsh + Starship loader"
 
 # --- 7. Done ----------------------------------------------------------------
