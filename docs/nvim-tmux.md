@@ -36,7 +36,7 @@ If plugin install gets stuck or you add new `@plugin` lines later:
 <prefix> alt-u   # remove plugins not in config
 ```
 
-The prefix is `C-a` (re-mapped from default `C-b`).
+The prefix is `C-b` (tmux default).
 
 ---
 
@@ -63,7 +63,7 @@ between its own panes.
 
 ## Cheat sheet
 
-### tmux (prefix = `C-a`)
+### tmux (prefix = `C-b`)
 
 | Keybind             | Action                                       |
 | ------------------- | -------------------------------------------- |
