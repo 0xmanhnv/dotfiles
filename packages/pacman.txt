@@ -24,3 +24,6 @@ nodejs
 npm
 go
 ghostscript
+docker
+docker-compose
+docker-buildx

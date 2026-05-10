@@ -47,6 +47,7 @@ brew "rlwrap"
 # Casks
 cask "ghostty"
 cask "font-jetbrains-mono-nerd-font"
+cask "orbstack"        # Docker / K8s / Linux VMs — drop-in for Docker Desktop
 
 # Manual installers — NOT available via Homebrew. Install separately on a fresh
 # machine if you need them (see ~/.config/zsh/40-darwin.zsh for PATH setup):

@@ -139,6 +139,48 @@ since async has no downside). The default `slow_terminal: false` keeps
 the full plugin set on workstations where there's plenty of CPU and a
 local terminal.
 
+### Pentest mode
+
+The base package lists are dev-focused. Offensive-security tooling (nmap,
+ffuf, sqlmap, hashcat, john, ghidra, burp-suite, radare2, mitmproxy,
+exiftool, tcpdump, …) lives in separate lists and only installs when
+explicitly opted in:
+
+```toml
+# ~/.config/chezmoi/chezmoi.toml
+[data]
+pentest = true
+```
+
+Then `chezmoi apply` re-runs the install script, which layers
+`Brewfile.pentest` on macOS or `packages/{apt,dnf,pacman}.pentest.txt`
+on Linux on top of the base lists. Default `pentest: false` keeps
+dev-only machines lean.
+
+Python tooling (impacket, NetExec, responder) isn't in package repos —
+install with `pipx` once, then they auto-update via `pipx upgrade-all`:
+
+```sh
+pipx install impacket
+pipx install git+https://github.com/Pennyw0rth/NetExec
+```
+
+### Docker / OrbStack
+
+Container runtime is included in every OS list (always installed):
+
+| OS                | Tool                                      |
+| ----------------- | ----------------------------------------- |
+| macOS             | OrbStack (`cask "orbstack"`)              |
+| Debian/Ubuntu/Kali| `docker.io docker-compose-v2 docker-buildx` |
+| Fedora            | `moby-engine docker-compose`              |
+| Arch              | `docker docker-compose docker-buildx`     |
+
+On Linux the install script runs `systemctl enable --now docker` and adds
+the current user to the `docker` group automatically — log out / `newgrp
+docker` for the group change to take effect in the active shell. On
+macOS, launch OrbStack once after install (Spotlight → "OrbStack").
+
 ---
 
 ## What's inside
@@ -157,12 +199,14 @@ local terminal.
 │   └── zshrc.local.example            Template for ~/.zshrc.local (per-machine overrides)
 │
 ├── Brewfile                           macOS packages (`brew bundle`)
+├── Brewfile.pentest                   macOS pentest toolkit (only used when pentest = true)
 ├── packages/
-│   ├── apt.txt                        Debian / Ubuntu
-│   ├── pacman.txt                     Arch
-│   └── dnf.txt                        Fedora
+│   ├── apt.txt                        Debian / Ubuntu (base)
+│   ├── pacman.txt                     Arch (base)
+│   ├── dnf.txt                        Fedora (base)
+│   └── *.pentest.txt                  Per-OS offensive-security toolkit (only used when pentest = true)
 │
-├── .chezmoidata.yaml                  Variables (identity + nerd_font + slow_terminal flags)
+├── .chezmoidata.yaml                  Variables (identity + nerd_font / slow_terminal / pentest / profile flags)
 ├── .chezmoiignore                     Per-OS file filters
 │
 ├── dot_zshrc.tmpl                     Loader: pure zsh + Starship + 4 plugins (gates fzf-tab --icons + syntax-highlighting via flags)

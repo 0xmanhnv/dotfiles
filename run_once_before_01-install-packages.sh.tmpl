@@ -14,6 +14,10 @@ else
 fi
 
 brew bundle --file="{{ .chezmoi.sourceDir }}/Brewfile"
+{{ if .pentest -}}
+echo "==> Installing pentest toolkit (pentest flag = true)"
+brew bundle --file="{{ .chezmoi.sourceDir }}/Brewfile.pentest"
+{{ end -}}
 {{ else if eq .chezmoi.os "linux" -}}
 echo "==> Installing Linux packages"
 if [[ -f /etc/debian_version ]]; then
@@ -81,6 +85,25 @@ if [[ -f /etc/debian_version ]]; then
   if (( ${#missing[@]} > 0 )); then
     echo "==> Not in apt repos on this distro: ${missing[*]} — using fallback installers"
   fi
+
+{{ if .pentest -}}
+  echo "==> Installing pentest toolkit (pentest flag = true)"
+  pentest_list="{{ .chezmoi.sourceDir }}/packages/apt.pentest.txt"
+  pentest_available=()
+  while IFS= read -r pkg; do
+    [[ -z "$pkg" || "$pkg" =~ ^[[:space:]]*# ]] && continue
+    candidate="$(apt-cache policy "$pkg" 2>/dev/null \
+      | awk '/^[[:space:]]+Candidate:/ {print $2}')"
+    if [[ -n "$candidate" && "$candidate" != "(none)" ]]; then
+      pentest_available+=("$pkg")
+    else
+      echo "==> Pentest pkg $pkg not in apt — install manually (try Kali repo or pipx)"
+    fi
+  done < "$pentest_list"
+  if (( ${#pentest_available[@]} > 0 )); then
+    sudo apt-get install -y "${pentest_available[@]}"
+  fi
+{{ end -}}
 
   is_missing() {
     local p="$1" m
@@ -188,11 +211,36 @@ if [[ -f /etc/debian_version ]]; then
   fi
 elif [[ -f /etc/arch-release ]]; then
   sudo pacman -Sy --noconfirm --needed $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/pacman.txt" | tr '\n' ' ')
+{{ if .pentest -}}
+  echo "==> Installing pentest toolkit (pentest flag = true)"
+  sudo pacman -S --noconfirm --needed $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/pacman.pentest.txt" | tr '\n' ' ') || \
+    echo "==> Some pentest pacman pkgs unavailable — consider BlackArch overlay"
+{{ end -}}
 elif [[ -f /etc/fedora-release ]]; then
   # --skip-unavailable: don't fail the whole transaction if a single package
   # has been renamed / removed in this Fedora release (common for the
   # rolling-name java-XX-openjdk-devel formulas).
   sudo dnf install -y --skip-unavailable $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/dnf.txt" | tr '\n' ' ')
+{{ if .pentest -}}
+  echo "==> Installing pentest toolkit (pentest flag = true)"
+  sudo dnf install -y --skip-unavailable $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/dnf.pentest.txt" | tr '\n' ' ')
+{{ end -}}
+fi
+
+# --- Docker post-install (Linux) -------------------------------------------
+# Enable + start the daemon and add the current user to the `docker` group so
+# `docker` runs without sudo. Re-login (or `newgrp docker`) is needed for the
+# group change to take effect in the active shell.
+if command -v docker >/dev/null 2>&1 && command -v systemctl >/dev/null 2>&1; then
+  if systemctl list-unit-files docker.service >/dev/null 2>&1 \
+     && ! systemctl is-enabled --quiet docker.service; then
+    echo "==> Enabling docker.service"
+    sudo systemctl enable --now docker.service || true
+  fi
+  if ! id -nG "$USER" | tr ' ' '\n' | grep -qx docker; then
+    echo "==> Adding $USER to docker group (re-login or 'newgrp docker' to apply)"
+    sudo usermod -aG docker "$USER" || true
+  fi
 fi
 
 # JetBrainsMono Nerd Font — starship's prompt and eza's --icons need Nerd

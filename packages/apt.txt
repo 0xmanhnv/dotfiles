@@ -23,3 +23,6 @@ openjdk-21-jdk
 nodejs
 golang-go
 ghostscript
+docker.io
+docker-compose-v2
+docker-buildx

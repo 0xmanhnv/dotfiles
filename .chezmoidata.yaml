@@ -28,6 +28,17 @@ profile: "desktop"
 # In that mode, starship falls back to ASCII labels and eza drops --icons.
 nerd_font: true
 
+# Install offensive-security toolkit (nmap, ffuf, sqlmap, hashcat, ghidra,
+# burp-suite, ...). Default false: dev-only machines stay lean. Override
+# per-machine in ~/.config/chezmoi/chezmoi.toml on the pentest box:
+#
+#   [data]
+#   pentest = true
+#
+# When true, the install script also pulls Brewfile.pentest /
+# packages/{apt,dnf,pacman}.pentest.txt on top of the base lists.
+pentest: false
+
 # Opt out of zsh-syntax-highlighting on machines where typing feels laggy
 # or characters get duplicated/lost — typically code-server's xterm.js
 # over WebSocket, SSH over high-RTT links, or low-CPU VMs. The plugin re-

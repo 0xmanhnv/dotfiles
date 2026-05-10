@@ -2,6 +2,7 @@ README.md
 LICENSE
 scripts/**
 Brewfile
+Brewfile.pentest
 packages/**
 docs/**
 .gitignore

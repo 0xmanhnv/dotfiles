@@ -25,3 +25,5 @@ nodejs
 npm
 golang
 ghostscript
+moby-engine
+docker-compose
