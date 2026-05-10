@@ -27,3 +27,7 @@ golang
 ghostscript
 moby-engine
 docker-compose
+lazygit
+git-delta
+tealdeer
+glow

@@ -23,7 +23,10 @@
 
 [core]
 	editor = nvim
-	pager = less -FRX
+	# delta is installed by Brewfile / packages/*.txt. If it's missing on a
+	# fresh machine before run_once installs run, git silently skips paging
+	# and falls back to plain stdout (still readable, no hard error).
+	pager = delta
 	excludesfile = ~/.gitignore_global
 
 [color]
@@ -32,6 +35,16 @@
 [diff]
 	algorithm = histogram
 	colorMoved = default
+
+[interactive]
+	diffFilter = delta --color-only
+
+[delta]
+	navigate = true
+	line-numbers = true
+	side-by-side = false
+	syntax-theme = Catppuccin-mocha
+	hyperlinks = true
 
 [merge]
 	conflictstyle = zdiff3

@@ -21,6 +21,10 @@ brew "tree"
 brew "wget"
 brew "htop"
 brew "ghostscript"     # Used by snacks.nvim image rendering for PDF preview
+brew "lazygit"         # Git TUI — pairs nicely with tmux
+brew "git-delta"       # Pretty diffs (wired up in dot_gitconfig.tmpl)
+brew "tealdeer"        # Fast Rust impl of tldr — `tldr <cmd>` for examples
+brew "glow"            # Render markdown in the terminal
 
 # Languages — pin to LTS / current stable. jenv manages JDK switching; gvm
 # (manual installer) handles per-project Go versions when needed.

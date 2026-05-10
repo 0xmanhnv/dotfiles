@@ -27,3 +27,7 @@ ghostscript
 docker
 docker-compose
 docker-buildx
+lazygit
+git-delta
+tealdeer
+glow
