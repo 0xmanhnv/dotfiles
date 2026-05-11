@@ -23,12 +23,42 @@ vim.g.loaded_python3_provider = 0
 -- has clearly converged on a different number.
 vim.opt.colorcolumn = "100"
 
+-- Match each filetype's ruler to what its formatter actually wraps to,
+-- so the visual guide predicts what `:w` will reformat. Width sources:
+-- rustfmt / google-java-format / Kotlin style → 100;
+-- stylua / clang-format → 100 (explicitly set in plugins/conform.lua);
+-- Black / Ruff → 88; prettier default → 80; gofmt → no limit;
+-- commit-body convention → 72.
 local ft_colorcolumn = {
-  python = "88",     -- Black / Ruff default
-  gitcommit = "72",  -- universal commit-body width (git log / GitHub UI)
-  markdown = "",     -- prose wraps naturally; rulers add noise
+  -- Python: Black / Ruff converge on 88
+  python = "88",
+
+  -- Prettier-formatted languages: default printWidth = 80. A project's
+  -- .prettierrc still wins at format time; this just shows the canonical
+  -- default visually.
+  javascript = "80",
+  javascriptreact = "80",
+  typescript = "80",
+  typescriptreact = "80",
+  vue = "80",
+  svelte = "80",
+  astro = "80",
+  json = "80",
+  jsonc = "80",
+  yaml = "80",
+  css = "80",
+  scss = "80",
+  less = "80",
+  html = "80",
+  graphql = "80",
+
+  -- Commit body convention (git log / GitHub UI wrap to this)
+  gitcommit = "72",
+
+  -- Prose / structured docs: no ruler — wrapping is editorial, not mechanical
+  markdown = "",
   text = "",
-  help = "",         -- vim's built-in help files use their own layout
+  help = "",          -- vim's built-in help has its own layout
 }
 
 vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
