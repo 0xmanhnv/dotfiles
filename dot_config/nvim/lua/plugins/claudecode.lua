@@ -25,35 +25,34 @@ return {
   ---@module "claudecode"
   ---@type PartialClaudeCodeConfig
   opts = {
-    -- ===== Terminal: where Claude window opens and its size =====
+    -- ===== Terminal: floating window, not a side split =====
+    -- Rationale: explorer (0.20) + Claude split (0.35) leaves only ~45%
+    -- of a MacBook screen for the editor — too narrow for the 100-col
+    -- ruler. A float overlays the editor when active and gives the
+    -- entire width back when hidden (<C-,>). Diff review stays clean
+    -- because diff_opts.open_in_new_tab = true sends the comparison to
+    -- its own tab regardless of terminal mode.
+    --
+    -- split_side / split_width_percentage are unused while
+    -- snacks_win_opts.position = "float"; removed to avoid stale config.
     ---@diagnostic disable-next-line: missing-fields
     terminal = {
-      -- Use snacks.nvim as the terminal provider (nicer UI, supports float)
       provider = "snacks",
-
-      -- Position and size of the split on the right
-      split_side = "right",
-      split_width_percentage = 0.35, -- 35% of screen width, wide enough to read
-
-      -- Auto-close behavior when Claude exits
-      auto_close = false, -- keep window open to inspect errors if any
-
-      -- Use snacks float window for a nicer UX (optional)
-      -- Uncomment the block below to use a floating window instead of a split
-      -- snacks_win_opts = {
-      --     position = "float",
-      --     width = 0.5,
-      --     height = 0.9,
-      --     border = "rounded",
-      --     keys = {
-      --         claude_hide = {
-      --             "<C-,>",
-      --             function(self) self:hide() end,
-      --             mode = { "n", "t" },
-      --             desc = "Hide Claude",
-      --         },
-      --     },
-      -- },
+      auto_close = false, -- keep window/buffer alive to inspect errors
+      snacks_win_opts = {
+        position = "float",
+        width  = 0.8,   -- 80% of screen — room to read responses comfortably
+        height = 0.85,
+        border = "rounded",
+        keys = {
+          claude_hide = {
+            "<C-,>",
+            function(self) self:hide() end,
+            mode = { "n", "t" },
+            desc = "Hide Claude (keeps the conversation alive)",
+          },
+        },
+      },
     },
     -- ===== Diff view: open in a dedicated tab, no terminal sandwich =====
     -- Default behavior keeps the Claude terminal in the same tab while a
