@@ -182,8 +182,12 @@ if [[ -f /etc/debian_version ]]; then
   # releases — single static binary inside a tarball each. Layout differs
   # per project (lazygit's binary is at archive root; glow's is nested in a
   # versioned subdir), so extract the whole tarball into a temp dir and
-  # find the binary by name. Use grep over API output instead of jq to
-  # avoid an ordering dependency on jq itself.
+  # find the binary by name.
+  #
+  # Version resolution: follow the redirect on /releases/latest instead of
+  # hitting api.github.com. GitHub's unauthenticated REST API allows 60
+  # req/hour per IP, and CI runners share IPs — exceeded quotas return 403
+  # and break the bootstrap. The HTML redirect endpoint has no such limit.
   install_github_tarball_binary() {
     local repo="$1" binary="$2" arch
     arch="$(uname -m)"
@@ -191,11 +195,11 @@ if [[ -f /etc/debian_version ]]; then
       aarch64|arm64) arch=arm64 ;;
       x86_64|amd64)  arch=x86_64 ;;
     esac
-    local ver
-    ver="$(curl -fsSL "https://api.github.com/repos/${repo}/releases/latest" \
-      | grep -oE '"tag_name":\s*"v?[^"]+"' \
-      | head -1 | sed -E 's/.*"v?([^"]+)"/\1/')"
-    if [[ -z "$ver" ]]; then
+    local final_url ver
+    final_url="$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
+      "https://github.com/${repo}/releases/latest")"
+    ver="$(echo "$final_url" | sed -E 's|.*/v?([^/]+)$|\1|')"
+    if [[ -z "$ver" || "$ver" == "$final_url" ]]; then
       echo "WARNING: couldn't resolve latest version for $repo — skipping" >&2
       return 0
     fi
