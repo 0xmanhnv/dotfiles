@@ -10,6 +10,13 @@ return {
   "folke/persistence.nvim",
   lazy = false, -- needed so the VimEnter autocmd has the plugin available
   opts = function()
+    -- Capture the cwd Neovim started in. If the user :cd's during the
+    -- session (LSP root jumps, project pickers, terminal :cd, ...),
+    -- pre_save below restores this directory before mksession so the
+    -- session file is keyed to the original project root — not whatever
+    -- subdir the cwd happened to drift to.
+    local initial_cwd = vim.fn.getcwd()
+
     -- Extend Neovim's default sessionoptions with `localoptions` so
     -- per-buffer settings (filetype, shiftwidth, …) survive the round
     -- trip. Without this, mksession drops local options and restored
@@ -61,6 +68,12 @@ return {
       branch = true,
       options = options,
       pre_save = function()
+        -- Restore cwd to the directory Neovim launched in BEFORE we
+        -- filter buffers and mksession runs. mksession bakes the
+        -- current cwd into the session and persistence keys the
+        -- session filename off it; without this, a stray :cd ends up
+        -- saving the wrong session for the wrong directory.
+        pcall(vim.cmd.cd, initial_cwd)
         for _, buf in ipairs(vim.api.nvim_list_bufs()) do
           if vim.api.nvim_buf_is_loaded(buf) then
             local name = vim.api.nvim_buf_get_name(buf)
