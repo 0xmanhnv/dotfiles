@@ -75,6 +75,17 @@ return {
         -- saving the wrong session for the wrong directory.
         pcall(vim.cmd.cd, initial_cwd)
 
+        -- Clear the arglist before mksession. The arglist is separate
+        -- from the buflist: a previously polluted session (or a
+        -- stray :argadd) leaves entries here that mksession faithfully
+        -- writes back as `$argadd <path>` — surviving every buflist
+        -- filter we apply below and re-appearing as buffers on the
+        -- next load. Wipe it; session restore from `nvim <dir>` only
+        -- needs cwd (the `cd` line above), not the arglist.
+        if vim.fn.argc() > 0 then
+          pcall(vim.cmd, "silent! %argdelete")
+        end
+
         -- Compute the project-root prefix once. Any buffer whose file
         -- path doesn't start with this prefix is "out of project" and
         -- gets wiped — without this, opening a one-off file like
