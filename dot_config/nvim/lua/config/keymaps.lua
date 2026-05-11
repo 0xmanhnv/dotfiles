@@ -25,6 +25,17 @@ vim.keymap.set({ "n", "v" }, "<PageUp>",   "<C-u>zz", { desc = "Half page up" })
 vim.keymap.set("n", "n", "nzzzv", { desc = "Next search result (centered)" })
 vim.keymap.set("n", "N", "Nzzzv", { desc = "Prev search result (centered)" })
 
+-- Force <leader>e to always open the explorer at project root and never
+-- auto-reveal the current buffer. LazyVim's default keymap (from the
+-- snacks_explorer extra) calls Snacks.explorer({ cwd = LazyVim.root() })
+-- without specifying follow_file, which leaves snacks free to use its
+-- cached / default behavior (auto-reveal). Pass follow_file = false
+-- explicitly here so toggling <leader>e is predictable.
+vim.keymap.set("n", "<leader>e", function()
+  local ok, root = pcall(function() return LazyVim.root() end)
+  Snacks.explorer({ cwd = (ok and root) or vim.fn.getcwd(), follow_file = false })
+end, { desc = "Explorer (root, no reveal)" })
+
 -- Diagnostic → clipboard helpers. Lets you grab an LSP/linter error and
 -- paste straight into a search bar / chat / commit message without
 -- retyping. Uses `+` register (system clipboard), which the OSC 52
