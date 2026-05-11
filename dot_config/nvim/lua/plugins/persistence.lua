@@ -66,10 +66,17 @@ return {
           -- Open the file tree. Neo-tree isn't always installed (this
           -- config uses snacks.explorer instead); try Neotree, fall
           -- back to Snacks.explorer, no-op if neither is available.
+          -- pcall wraps an anonymous fn because lua-ls types vim.cmd
+          -- as table|callable and refuses to accept it as `fun(...)`.
+          -- rawget hides the Snacks global lookup from the "undefined
+          -- field" check (no type def for the Snacks global exists).
           if vim.fn.exists(":Neotree") == 2 then
-            pcall(vim.cmd, "Neotree show")
-          elseif _G.Snacks and _G.Snacks.explorer then
-            pcall(_G.Snacks.explorer)
+            pcall(function() vim.cmd("Neotree show") end)
+          else
+            local snacks = rawget(_G, "Snacks")
+            if snacks and snacks.explorer then
+              pcall(snacks.explorer)
+            end
           end
           for _, buf in ipairs(vim.api.nvim_list_bufs()) do
             if vim.api.nvim_buf_is_loaded(buf) then
