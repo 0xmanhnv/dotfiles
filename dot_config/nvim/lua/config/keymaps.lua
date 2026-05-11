@@ -25,32 +25,9 @@ vim.keymap.set({ "n", "v" }, "<PageUp>",   "<C-u>zz", { desc = "Half page up" })
 vim.keymap.set("n", "n", "nzzzv", { desc = "Next search result (centered)" })
 vim.keymap.set("n", "N", "Nzzzv", { desc = "Prev search result (centered)" })
 
--- Force <leader>e to always open the explorer at cwd root, fully
--- collapsed, no auto-reveal.
---
--- snacks.explorer:
---   1. uses a module-level Tree singleton — node.open survives pickers
---   2. State.new(picker) unconditionally calls Tree:open(buf_file)
---      (explorer.lua:47), re-expanding every ancestor of the focused
---      buffer on every open — there's no config flag to disable it
---
--- Pre-call close_all and deferred close_all both lose the race against
--- that Tree:open. The only reliable fix is to neuter Tree.open just
--- while the picker initializes, then restore it. Combined with a
--- close_all pass to wipe lingering expansion, the new picker renders
--- only direct children of cwd. pcall guards against API renames.
-vim.keymap.set("n", "<leader>e", function()
-  local ok_root, root = pcall(function() return LazyVim.root() end)
-  local cwd = (ok_root and root) or vim.fn.getcwd()
-  pcall(function()
-    local Tree = require("snacks.explorer.tree")
-    Tree:close_all(cwd)
-    local orig_open = Tree.open
-    Tree.open = function(_self, _path) end -- no-op during picker init
-    Snacks.explorer({ cwd = cwd, follow_file = false })
-    vim.schedule(function() Tree.open = orig_open end)
-  end)
-end, { desc = "Explorer (root, collapsed, no reveal)" })
+-- <leader>e left to LazyVim's snacks_explorer default — toggles the
+-- tree, auto-reveals the active buffer (VS Code-style), and preserves
+-- expansion state across toggles within the session.
 
 -- Diagnostic → clipboard helpers. Lets you grab an LSP/linter error and
 -- paste straight into a search bar / chat / commit message without

@@ -49,14 +49,14 @@ return {
       enabled = true,
       sources = {
         explorer = {
-          hidden = true,       -- show dotfiles
-          ignored = false,     -- hide gitignored files
-          watch = true,        -- libuv fs_event watcher: auto-refresh when files change on disk
+          hidden = true,   -- show dotfiles
+          ignored = false, -- hide gitignored files
+          watch = true,    -- libuv fs_event watcher: auto-refresh when files change on disk
           auto_close = false,
-          follow_file = false, -- explorer always lands at cwd root, never
-                               -- auto-reveals the current buffer. <leader>e
-                               -- toggle should be predictable; reveal-current
-                               -- is available on demand via picker actions.
+          -- follow_file = true (snacks default): auto-reveal the active
+          -- buffer, VS Code-style. The view scrolls to the open file's
+          -- location but the root stays at cwd — scroll up to see the
+          -- top-level project structure.
         },
       },
     },
