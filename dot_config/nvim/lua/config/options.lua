@@ -14,6 +14,19 @@ vim.g.loaded_perl_provider = 0
 vim.g.loaded_ruby_provider = 0
 vim.g.loaded_python3_provider = 0
 
+-- LazyVim project-root detection. Default { "lsp", { ".git", "lua" }, "cwd" }
+-- mis-detects the root in two ways for this workflow:
+--   1. lua-ls reports its workspace as `dot_config/nvim/` (the nvim config
+--      dir, not the dotfiles repo). LSP is queried first, so LazyVim.root()
+--      ends up at the subfolder.
+--   2. The "lua" pattern matches any dir containing a `lua/` subdir, which
+--      hits `dot_config/nvim/` even without LSP.
+--
+-- Use only "cwd": match VS Code's "workspace = the folder you opened"
+-- semantics. `nvim ~/Data/Me/dotfiles` -> cwd = dotfiles -> explorer rooted
+-- there regardless of which buffer is focused or what LSP says.
+vim.g.root_spec = { "cwd" }
+
 -- 1. Enable internal diff with linematch
 vim.opt.diffopt:append("linematch:60")
 vim.opt.diffopt:append("algorithm:histogram")
