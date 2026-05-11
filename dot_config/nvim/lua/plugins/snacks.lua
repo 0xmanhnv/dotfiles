@@ -57,6 +57,16 @@ return {
           -- buffer, VS Code-style. The view scrolls to the open file's
           -- location but the root stays at cwd — scroll up to see the
           -- top-level project structure.
+          --
+          -- Trim the sidebar from snacks's default 40 cols. Use a %-based
+          -- width so the explorer scales with the monitor (MacBook 14"
+          -- vs an external 27" both end up with a reasonable ratio).
+          -- min_width 30 keeps the sidebar readable on small splits /
+          -- narrow windows where 20% would shrink below useful.
+          layout = {
+            preset = "sidebar",
+            layout = { width = 0.20, min_width = 30 },
+          },
         },
       },
     },
