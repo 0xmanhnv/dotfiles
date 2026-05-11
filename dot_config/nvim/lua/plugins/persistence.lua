@@ -100,8 +100,11 @@ return {
     -- restore script run with either of those still alive, they hang
     -- around in the bufferline. Strip them before load() takes over.
     local function wipe_unwanted_buffers()
+      -- Use is_valid (not is_loaded) so we also catch buffers created by
+      -- :argadd in the session script — they're buflisted (so they
+      -- appear in the bufferline as "dotfiles/") but never loaded.
       for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.api.nvim_buf_is_loaded(buf) then
+        if vim.api.nvim_buf_is_valid(buf) then
           local name = vim.api.nvim_buf_get_name(buf)
           if name == "" or vim.fn.isdirectory(name) == 1 then
             pcall(vim.api.nvim_buf_delete, buf, { force = true })
@@ -157,7 +160,9 @@ return {
           -- before doing anything else so filetype detect and Neotree
           -- don't act on them.
           for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-            if vim.api.nvim_buf_is_loaded(buf) then
+            -- is_valid (not is_loaded) so :argadd-created dir buffers
+            -- — buflisted but unloaded — also get wiped.
+            if vim.api.nvim_buf_is_valid(buf) then
               local name = vim.api.nvim_buf_get_name(buf)
               if name == "" or vim.fn.isdirectory(name) == 1 then
                 pcall(vim.api.nvim_buf_delete, buf, { force = true })
