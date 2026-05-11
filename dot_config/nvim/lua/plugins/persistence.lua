@@ -81,6 +81,22 @@ return {
   init = function()
     local group = vim.api.nvim_create_augroup("persistence_autoload", { clear = true })
 
+    -- Wipe loaded buffers that are either nameless or point at a directory.
+    -- The startup splash buffer that nvim creates with no args is nameless;
+    -- `nvim <dir>` creates a directory-named buffer. If we let mksession's
+    -- restore script run with either of those still alive, they hang
+    -- around in the bufferline. Strip them before load() takes over.
+    local function wipe_unwanted_buffers()
+      for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_loaded(buf) then
+          local name = vim.api.nvim_buf_get_name(buf)
+          if name == "" or vim.fn.isdirectory(name) == 1 then
+            pcall(vim.api.nvim_buf_delete, buf, { force = true })
+          end
+        end
+      end
+    end
+
     vim.api.nvim_create_autocmd("VimEnter", {
       group = group,
       nested = true, -- let BufEnter/FileType/etc. fire so LSP + treesitter attach
@@ -88,6 +104,7 @@ return {
         local argc = vim.fn.argc()
         -- Case 1: `nvim` with no args — restore session for current cwd
         if argc == 0 then
+          wipe_unwanted_buffers()
           require("persistence").load()
           return
         end
@@ -96,6 +113,7 @@ return {
         if argc == 1 then
           local arg = vim.fn.argv(0) --[[@as string]]
           if vim.fn.isdirectory(arg) == 1 then
+            wipe_unwanted_buffers()
             require("persistence").load()
           end
         end
