@@ -38,3 +38,23 @@ vim.api.nvim_create_autocmd("VimEnter", {
   end,
   desc = "Auto-cd into directory passed as argument",
 })
+
+-- Clipboard: `y` yanks into the OS clipboard so paste into terminals,
+-- Claude Code, browsers, etc. just works. LazyVim already sets this;
+-- restating for explicitness.
+vim.opt.clipboard = "unnamedplus"
+
+-- When SSH'd into a remote, pbcopy/xclip on the *local* machine aren't
+-- reachable from the remote Neovim. Switch the clipboard provider to
+-- OSC 52 (built-in since Neovim 0.10) — it writes via terminal escape
+-- sequences which Ghostty intercepts and writes into the host clipboard.
+-- Requires tmux `set -g set-clipboard on` (already configured) so the
+-- sequence propagates out of nested tmux.
+if vim.env.SSH_TTY ~= nil then
+  local osc52 = require("vim.ui.clipboard.osc52")
+  vim.g.clipboard = {
+    name = "OSC 52",
+    copy  = { ["+"] = osc52.copy("+"),  ["*"] = osc52.copy("*") },
+    paste = { ["+"] = osc52.paste("+"), ["*"] = osc52.paste("*") },
+  }
+end
