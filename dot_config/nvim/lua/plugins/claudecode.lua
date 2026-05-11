@@ -23,9 +23,10 @@ return {
   -- Lazy-loaded via keys (default behavior)
 
   ---@module "claudecode"
-  ---@type ClaudeCode.Config
+  ---@type PartialClaudeCodeConfig
   opts = {
     -- ===== Terminal: where Claude window opens and its size =====
+    ---@diagnostic disable-next-line: missing-fields
     terminal = {
       -- Use snacks.nvim as the terminal provider (nicer UI, supports float)
       provider = "snacks",
@@ -53,6 +54,22 @@ return {
       --         },
       --     },
       -- },
+    },
+    -- ===== Diff view: open in a dedicated tab, no terminal sandwich =====
+    -- Default behavior keeps the Claude terminal in the same tab while a
+    -- diff is open, so the layout ends up [old | terminal | new] — the
+    -- terminal column wedges between the two file panes and kills the
+    -- side-by-side review. Punt the diff to its own tab and suppress the
+    -- terminal there:
+    --   open_in_new_tab           = true  → diff opens in a fresh tab
+    --   hide_terminal_in_new_tab  = true  → no terminal vsplit in that tab
+    -- Only takes effect together; the second is gated on the first
+    -- (diff.lua:257-263). <C-Tab> back to the original tab to keep
+    -- chatting with Claude.
+    ---@diagnostic disable-next-line: missing-fields
+    diff_opts = {
+      open_in_new_tab = true,
+      hide_terminal_in_new_tab = true,
     },
     models = {
       { name = "Claude Opus 4.7 (Latest)", value = "opus" },
