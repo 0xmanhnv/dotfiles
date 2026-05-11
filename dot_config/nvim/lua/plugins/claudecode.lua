@@ -26,18 +26,18 @@ return {
   ---@type PartialClaudeCodeConfig
   opts = {
     -- ===== Terminal: side split on the right =====
-    -- 0.30 = chat readable enough that responses + code blocks don't wrap
-    -- awkwardly. On a MacBook display (~180 cols) the layout is
-    -- 27 (explorer) + 54 (Claude) + 99 (editor). The editor side falls
-    -- short of the 100-col ruler by ~6 cols when both panels are open —
-    -- toggle the explorer off (<leader>e) while doing ruler-strict work
-    -- to reclaim ~27 cols. On a wide external monitor the fraction
-    -- scales up and the ruler always fits.
+    -- 0.35 = industry-aligned (VS Code Copilot Chat sidebar default
+    -- range, claudecode.nvim README example). Chat + code blocks render
+    -- without uncomfortable wrapping. On a MacBook display (~180 cols)
+    -- the layout is 36 (explorer) + 63 (Claude) + 81 (editor) — the
+    -- editor cuts under the 100-col ruler when both panels are open.
+    -- Trade-off accepted: toggle <leader>e to close explorer when
+    -- doing ruler-strict refactor work, or move to an external monitor.
     ---@diagnostic disable-next-line: missing-fields
     terminal = {
       provider = "snacks",
       split_side = "right",
-      split_width_percentage = 0.30,
+      split_width_percentage = 0.35,
       auto_close = false, -- keep buffer alive to inspect errors
     },
     -- ===== Diff view: open in a dedicated tab, no terminal sandwich =====

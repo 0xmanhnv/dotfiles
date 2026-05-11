@@ -58,15 +58,14 @@ return {
           -- location but the root stays at cwd — scroll up to see the
           -- top-level project structure.
           --
-          -- Trim the sidebar so explorer + Claude split + editor all fit
-          -- on a MacBook display (~180 cols): explorer 0.15 + Claude 0.25
-          -- + editor 0.60 = 27 + 45 + 108 cols. The editor side just
-          -- clears the 100-col ruler. min_width 25 keeps filenames legible
-          -- when 15% of a narrow split would shrink the panel below useful.
-          -- On a wide external monitor, 15% still scales up naturally.
+          -- Industry-standard sidebar width. VS Code's Explorer panel sits
+          -- around 0.20-0.25; neo-tree's fixed 40 cols also lands near 0.22
+          -- on a typical MacBook display. 0.20 fits longer filenames
+          -- (Java/TS spec files) comfortably while still scaling with the
+          -- monitor. min_width 25 keeps it readable in narrow splits.
           layout = {
             preset = "sidebar",
-            layout = { width = 0.15, min_width = 25 },
+            layout = { width = 0.20, min_width = 25 },
           },
         },
       },
