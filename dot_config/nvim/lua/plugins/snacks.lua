@@ -29,6 +29,14 @@ end
 return {
   "folke/snacks.nvim",
   opts = {
+    -- LazyVim enables snacks.scroll by default (animated smooth scroll).
+    -- It races with the `zz` suffix on our <C-d>/<C-u>/<C-f> keymaps:
+    -- the animation hasn't finished moving the cursor when zz snaps it
+    -- back to center, producing the "page-down then jumps back" feel
+    -- when keys are pressed in quick succession. Disable smooth scroll
+    -- and let the keymaps' instant <C-d>zz behavior win.
+    scroll = { enabled = false },
+
     dashboard = {
       enabled = true,
       preset = {
