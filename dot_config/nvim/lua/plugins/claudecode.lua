@@ -26,15 +26,18 @@ return {
   ---@type PartialClaudeCodeConfig
   opts = {
     -- ===== Terminal: side split on the right =====
-    -- Width tuned for a MacBook display: explorer 0.15 (snacks.lua) +
-    -- Claude 0.25 leaves ~0.60 = ~108 cols of editor on a 180-col total
-    -- screen, just enough to keep the 100-col ruler on screen. Bump to
-    -- 0.30 on a wide external monitor if Claude responses feel cramped.
+    -- 0.30 = chat readable enough that responses + code blocks don't wrap
+    -- awkwardly. On a MacBook display (~180 cols) the layout is
+    -- 27 (explorer) + 54 (Claude) + 99 (editor). The editor side falls
+    -- short of the 100-col ruler by ~6 cols when both panels are open —
+    -- toggle the explorer off (<leader>e) while doing ruler-strict work
+    -- to reclaim ~27 cols. On a wide external monitor the fraction
+    -- scales up and the ruler always fits.
     ---@diagnostic disable-next-line: missing-fields
     terminal = {
       provider = "snacks",
       split_side = "right",
-      split_width_percentage = 0.25,
+      split_width_percentage = 0.30,
       auto_close = false, -- keep buffer alive to inspect errors
     },
     -- ===== Diff view: open in a dedicated tab, no terminal sandwich =====
