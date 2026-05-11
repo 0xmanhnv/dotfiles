@@ -118,6 +118,21 @@ return {
         -- 100ms gives persistence time to finish wiring windows /
         -- buffers before we re-detect filetypes and open the tree.
         vim.defer_fn(function()
+          -- pre_save filters the save, but [No Name] and directory
+          -- buffers still slip through on restore — mksession recreates
+          -- the cwd entry from `nvim <dir>` as a directory buffer, and
+          -- the very first window often lands on a fresh [No Name]
+          -- before persistence wires it. Wipe both unconditionally
+          -- before doing anything else so filetype detect and Neotree
+          -- don't act on them.
+          for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+            if vim.api.nvim_buf_is_loaded(buf) then
+              local name = vim.api.nvim_buf_get_name(buf)
+              if name == "" or vim.fn.isdirectory(name) == 1 then
+                pcall(vim.api.nvim_buf_delete, buf, { force = true })
+              end
+            end
+          end
           -- Re-fire FileType in each restored buffer so treesitter / LSP
           -- attach (mksession + :badd don't fire FileType reliably).
           for _, buf in ipairs(vim.api.nvim_list_bufs()) do
