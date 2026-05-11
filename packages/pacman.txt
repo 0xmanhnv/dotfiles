@@ -19,6 +19,7 @@ htop
 ruby
 base-devel
 unzip
+ncurses
 jdk21-openjdk
 nodejs
 npm

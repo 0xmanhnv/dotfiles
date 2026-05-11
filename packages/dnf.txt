@@ -19,6 +19,7 @@ htop
 ruby
 unzip
 ca-certificates
+ncurses
 @development-tools
 java-latest-openjdk-devel
 nodejs

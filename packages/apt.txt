@@ -19,6 +19,7 @@ ruby
 build-essential
 unzip
 ca-certificates
+ncurses-bin
 openjdk-21-jdk
 nodejs
 golang-go

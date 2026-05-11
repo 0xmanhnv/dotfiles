@@ -78,3 +78,39 @@ if [[ -d "$HOME/Data/Tools/claude-code-multi-account-switch" ]]; then
   alias claude-next="$HOME/Data/Tools/claude-code-multi-account-switch/claude-next.sh"
   alias claude-usage="python3 $HOME/Data/Tools/claude-code-multi-account-switch/claude-usage.py"
 fi
+
+# --- ssh-fix-term: install host-side terminfo for $TERM ---------------------
+# Symptom: SSH into a server and every keystroke appears duplicated, or the
+# shell prompt redraws garbled. Cause: $TERM (xterm-ghostty / kitty / etc.)
+# isn't known to the remote — its terminfo isn't installed there, so the
+# shell mis-counts character widths and overlays prior output.
+#
+# Ghostty's `shell-integration-features = ssh-terminfo` (configured in
+# ~/.config/ghostty/config) auto-installs the entry on first SSH for most
+# cases. This helper covers the misses (SSH through tmux pass-through,
+# older Ghostty version, non-Ghostty terminals like kitty, etc.). One run
+# per host — terminfo lands in ~/.terminfo/ on the remote permanently.
+#
+#   ssh-fix-term kali@kali
+#   ssh-fix-term root@10.0.0.5
+ssh-fix-term() {
+  if [[ -z "$1" ]]; then
+    print -u2 "usage: ssh-fix-term <[user@]host>"
+    return 2
+  fi
+  if ! command -v infocmp >/dev/null 2>&1; then
+    print -u2 "ssh-fix-term: infocmp not found locally"
+    return 1
+  fi
+  local term="${TERM:-xterm-256color}"
+  if ! infocmp -x -- "$term" >/dev/null 2>&1; then
+    print -u2 "ssh-fix-term: no local terminfo entry for TERM=$term"
+    return 1
+  fi
+  if infocmp -x -- "$term" | ssh "$1" 'tic -x - 2>/dev/null'; then
+    print "ssh-fix-term: $term terminfo installed on $1"
+  else
+    print -u2 "ssh-fix-term: failed — check that 'tic' is on PATH for $1 (apt: ncurses-bin / dnf: ncurses)"
+    return 1
+  fi
+}
