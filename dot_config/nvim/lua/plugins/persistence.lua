@@ -9,12 +9,27 @@
 return {
   "folke/persistence.nvim",
   lazy = false, -- needed so the VimEnter autocmd has the plugin available
-  opts = {
-    branch = true,
-  },
+  opts = function()
+    -- Extend Neovim's default sessionoptions with `localoptions` so
+    -- per-buffer settings (filetype, shiftwidth, …) survive the round
+    -- trip. Without this, mksession drops local options and restored
+    -- buffers come back with filetype="", which is why treesitter / LSP
+    -- never attach. Captured at spec-eval time, after LazyVim's
+    -- options.lua has populated sessionoptions.
+    local options = vim.opt.sessionoptions:get()
+    if not vim.tbl_contains(options, "localoptions") then
+      table.insert(options, "localoptions")
+    end
+    return {
+      branch = true,
+      options = options,
+    }
+  end,
   init = function()
+    local group = vim.api.nvim_create_augroup("persistence_autoload", { clear = true })
+
     vim.api.nvim_create_autocmd("VimEnter", {
-      group = vim.api.nvim_create_augroup("persistence_autoload", { clear = true }),
+      group = group,
       nested = true, -- let BufEnter/FileType/etc. fire so LSP + treesitter attach
       callback = function()
         local argc = vim.fn.argc()
@@ -29,6 +44,34 @@ return {
           require("persistence").load()
         end
         -- Case 3: `nvim file.lua` — open just the file, no session restore
+      end,
+    })
+
+    -- After a session is restored, open the file tree and force-trigger
+    -- FileType detection on every restored buffer. mksession reloads the
+    -- buffers but FileType autocmds don't fire reliably for buffers
+    -- created by :badd/:edit during session sourcing — treesitter, LSP,
+    -- and other plugins that key off FileType then never attach. Walking
+    -- the buffer list and running `filetype detect` in each buffer's
+    -- context re-fires those autocmds. vim.schedule defers the work past
+    -- persistence's own window-wiring so we don't race.
+    vim.api.nvim_create_autocmd("User", {
+      group = group,
+      pattern = "PersistenceLoadPost",
+      callback = function()
+        vim.schedule(function()
+          vim.cmd("Neotree show")
+          for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+            if vim.api.nvim_buf_is_loaded(buf) then
+              local name = vim.api.nvim_buf_get_name(buf)
+              if name ~= "" and vim.fn.filereadable(name) == 1 then
+                vim.api.nvim_buf_call(buf, function()
+                  vim.cmd("filetype detect")
+                end)
+              end
+            end
+          end
+        end)
       end,
     })
   end,
