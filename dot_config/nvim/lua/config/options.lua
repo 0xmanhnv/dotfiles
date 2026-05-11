@@ -14,6 +14,36 @@ vim.g.loaded_perl_provider = 0
 vim.g.loaded_ruby_provider = 0
 vim.g.loaded_python3_provider = 0
 
+-- Column-limit ruler. Visual guide only (no textwidth auto-wrap; conform's
+-- format-on-save handles the real reformat to each language's canonical
+-- width). 100 columns is the modern polyglot default — matches rustfmt,
+-- stylua (configured to 100 in plugins/conform.lua), Google Java style,
+-- Kotlin style guide, and clang-format ColumnLimit:100 set in conform.
+-- Per-filetype overrides handle the cases where the language ecosystem
+-- has clearly converged on a different number.
+vim.opt.colorcolumn = "100"
+
+local ft_colorcolumn = {
+  python = "88",     -- Black / Ruff default
+  gitcommit = "72",  -- universal commit-body width (git log / GitHub UI)
+  markdown = "",     -- prose wraps naturally; rulers add noise
+  text = "",
+  help = "",         -- vim's built-in help files use their own layout
+}
+
+vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
+  group = vim.api.nvim_create_augroup("user_colorcolumn", { clear = true }),
+  desc = "Per-filetype colorcolumn",
+  callback = function(args)
+    local ft = vim.bo[args.buf].filetype
+    -- Use nil-aware lookup: missing FT falls back to global (100); explicit
+    -- "" disables the ruler. BufWinEnter handles the case where the same
+    -- window cycles between buffers of different filetypes.
+    local cc = ft_colorcolumn[ft]
+    vim.opt_local.colorcolumn = cc ~= nil and cc or "100"
+  end,
+})
+
 -- LazyVim project-root detection. Default { "lsp", { ".git", "lua" }, "cwd" }
 -- mis-detects the root in two ways for this workflow:
 --   1. lua-ls reports its workspace as `dot_config/nvim/` (the nvim config
