@@ -24,3 +24,48 @@ vim.keymap.set({ "n", "v" }, "<PageUp>",   "<C-u>zz", { desc = "Half page up" })
 -- Search results: keep centered + open folds (zv) so the match is visible
 vim.keymap.set("n", "n", "nzzzv", { desc = "Next search result (centered)" })
 vim.keymap.set("n", "N", "Nzzzv", { desc = "Prev search result (centered)" })
+
+-- Diagnostic → clipboard helpers. Lets you grab an LSP/linter error and
+-- paste straight into a search bar / chat / commit message without
+-- retyping. Uses `+` register (system clipboard), which the OSC 52
+-- fallback in options.lua makes work over SSH too.
+local diag_severity_name = {
+  [vim.diagnostic.severity.ERROR] = "ERROR",
+  [vim.diagnostic.severity.WARN]  = "WARN",
+  [vim.diagnostic.severity.INFO]  = "INFO",
+  [vim.diagnostic.severity.HINT]  = "HINT",
+}
+
+vim.keymap.set("n", "<leader>cy", function()
+  local lnum = vim.api.nvim_win_get_cursor(0)[1] - 1
+  local diags = vim.diagnostic.get(0, { lnum = lnum })
+  if vim.tbl_isempty(diags) then
+    vim.notify("No diagnostic on current line", vim.log.levels.WARN)
+    return
+  end
+  local msgs = {}
+  for _, d in ipairs(diags) do
+    table.insert(msgs, d.message)
+  end
+  vim.fn.setreg("+", table.concat(msgs, "\n"))
+  vim.notify(string.format("Copied %d diagnostic(s)", #diags))
+end, { desc = "Copy line diagnostic(s) to clipboard" })
+
+vim.keymap.set("n", "<leader>cY", function()
+  local diags = vim.diagnostic.get(0)
+  if vim.tbl_isempty(diags) then
+    vim.notify("No diagnostics in buffer", vim.log.levels.WARN)
+    return
+  end
+  table.sort(diags, function(a, b)
+    if a.lnum ~= b.lnum then return a.lnum < b.lnum end
+    return (a.col or 0) < (b.col or 0)
+  end)
+  local lines = {}
+  for _, d in ipairs(diags) do
+    local sev = diag_severity_name[d.severity] or "?"
+    table.insert(lines, string.format("[%s] L%d: %s", sev, d.lnum + 1, d.message))
+  end
+  vim.fn.setreg("+", table.concat(lines, "\n"))
+  vim.notify(string.format("Copied %d diagnostic(s) to clipboard", #diags))
+end, { desc = "Copy all buffer diagnostics to clipboard" })
