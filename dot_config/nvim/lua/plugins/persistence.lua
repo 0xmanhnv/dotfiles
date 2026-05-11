@@ -20,9 +20,62 @@ return {
     if not vim.tbl_contains(options, "localoptions") then
       table.insert(options, "localoptions")
     end
+
+    -- Filetypes / buftypes that should NEVER end up in a saved session.
+    -- Pickers, file trees, dashboards, plugin UIs, terminals, help/qf
+    -- splits, scratch buffers — wiping them in pre_save keeps the
+    -- session file clean and avoids weird [No Name] ghosts on restore.
+    local bad_filetypes = {
+      ["neo-tree"] = true,
+      ["neo-tree-popup"] = true,
+      ["snacks_dashboard"] = true,
+      ["snacks_picker"] = true,
+      ["snacks_picker_input"] = true,
+      ["snacks_picker_list"] = true,
+      ["snacks_picker_preview"] = true,
+      ["snacks_explorer"] = true,
+      ["snacks_terminal"] = true,
+      ["snacks_notif"] = true,
+      ["TelescopePrompt"] = true,
+      ["TelescopeResults"] = true,
+      ["lazy"] = true,
+      ["mason"] = true,
+      ["noice"] = true,
+      ["alpha"] = true,
+      ["dashboard"] = true,
+      ["help"] = true,
+      ["qf"] = true,
+      ["trouble"] = true,
+      ["lspinfo"] = true,
+      ["checkhealth"] = true,
+    }
+    local bad_buftypes = {
+      terminal = true,
+      nofile = true,
+      help = true,
+      quickfix = true,
+      prompt = true,
+    }
+
     return {
       branch = true,
       options = options,
+      pre_save = function()
+        for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+          if vim.api.nvim_buf_is_loaded(buf) then
+            local name = vim.api.nvim_buf_get_name(buf)
+            local ft = vim.bo[buf].filetype
+            local bt = vim.bo[buf].buftype
+            local junk = name == ""
+              or (name ~= "" and vim.fn.isdirectory(name) == 1)
+              or bad_buftypes[bt] == true
+              or bad_filetypes[ft] == true
+            if junk then
+              pcall(vim.api.nvim_buf_delete, buf, { force = true })
+            end
+          end
+        end
+      end,
     }
   end,
   init = function()
@@ -62,22 +115,11 @@ return {
       group = group,
       pattern = "PersistenceLoadPost",
       callback = function()
-        vim.schedule(function()
-          -- Open the file tree. Neo-tree isn't always installed (this
-          -- config uses snacks.explorer instead); try Neotree, fall
-          -- back to Snacks.explorer, no-op if neither is available.
-          -- pcall wraps an anonymous fn because lua-ls types vim.cmd
-          -- as table|callable and refuses to accept it as `fun(...)`.
-          -- rawget hides the Snacks global lookup from the "undefined
-          -- field" check (no type def for the Snacks global exists).
-          if vim.fn.exists(":Neotree") == 2 then
-            pcall(function() vim.cmd("Neotree show") end)
-          else
-            local snacks = rawget(_G, "Snacks")
-            if snacks and snacks.explorer then
-              pcall(snacks.explorer)
-            end
-          end
+        -- 100ms gives persistence time to finish wiring windows /
+        -- buffers before we re-detect filetypes and open the tree.
+        vim.defer_fn(function()
+          -- Re-fire FileType in each restored buffer so treesitter / LSP
+          -- attach (mksession + :badd don't fire FileType reliably).
           for _, buf in ipairs(vim.api.nvim_list_bufs()) do
             if vim.api.nvim_buf_is_loaded(buf) then
               local name = vim.api.nvim_buf_get_name(buf)
@@ -88,7 +130,17 @@ return {
               end
             end
           end
-        end)
+          -- Try to open neo-tree; if it's not loaded yet (cmd=
+          -- lazy-loaded specs register the command late), retry once
+          -- after another 200ms. pcall wraps an anonymous fn so lua-ls
+          -- doesn't trip on vim.cmd's union type.
+          local ok = pcall(function() vim.cmd("Neotree show") end)
+          if not ok then
+            vim.defer_fn(function()
+              pcall(function() vim.cmd("Neotree show") end)
+            end, 200)
+          end
+        end, 100)
       end,
     })
   end,
