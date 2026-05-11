@@ -74,15 +74,28 @@ return {
         -- session filename off it; without this, a stray :cd ends up
         -- saving the wrong session for the wrong directory.
         pcall(vim.cmd.cd, initial_cwd)
+
+        -- Compute the project-root prefix once. Any buffer whose file
+        -- path doesn't start with this prefix is "out of project" and
+        -- gets wiped — without this, opening a one-off file like
+        -- ~/.ssh/config.local from inside a project session would
+        -- contaminate the session save and the file would re-appear
+        -- on every future restore even after the user closes it.
+        local cwd_prefix = vim.fs.normalize(initial_cwd):gsub("/?$", "/")
+
+        -- is_valid (not is_loaded) so we also catch buflisted-but-
+        -- unloaded buffers — those still end up in mksession.
         for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-          if vim.api.nvim_buf_is_loaded(buf) then
+          if vim.api.nvim_buf_is_valid(buf) then
             local name = vim.api.nvim_buf_get_name(buf)
             local ft = vim.bo[buf].filetype
             local bt = vim.bo[buf].buftype
+            local name_norm = name ~= "" and vim.fs.normalize(name) or ""
             local junk = name == ""
               or (name ~= "" and vim.fn.isdirectory(name) == 1)
               or bad_buftypes[bt] == true
               or bad_filetypes[ft] == true
+              or (name_norm ~= "" and not vim.startswith(name_norm, cwd_prefix))
             if junk then
               pcall(vim.api.nvim_buf_delete, buf, { force = true })
             end
