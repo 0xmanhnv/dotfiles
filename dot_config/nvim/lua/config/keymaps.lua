@@ -25,27 +25,30 @@ vim.keymap.set({ "n", "v" }, "<PageUp>",   "<C-u>zz", { desc = "Half page up" })
 vim.keymap.set("n", "n", "nzzzv", { desc = "Next search result (centered)" })
 vim.keymap.set("n", "N", "Nzzzv", { desc = "Prev search result (centered)" })
 
--- Force <leader>e to always open the explorer fresh: at project root, no
--- auto-reveal, with all previously expanded subdirs collapsed.
+-- Force <leader>e to always open the explorer at cwd root, fully
+-- collapsed, no auto-reveal.
 --
--- The Tree singleton in snacks.explorer keeps node.open state across
--- pickers. Worse, every new picker's State.new runs Tree:open(buf_file)
--- (explorer.lua:47) which re-expands every ancestor of the current
--- buffer — so a pre-call close_all gets undone immediately. Schedule
--- close_all AFTER picker init, then re-find to refresh the rendered
--- list. pcall guards against snacks API churn.
+-- snacks.explorer:
+--   1. uses a module-level Tree singleton — node.open survives pickers
+--   2. State.new(picker) unconditionally calls Tree:open(buf_file)
+--      (explorer.lua:47), re-expanding every ancestor of the focused
+--      buffer on every open — there's no config flag to disable it
+--
+-- Pre-call close_all and deferred close_all both lose the race against
+-- that Tree:open. The only reliable fix is to neuter Tree.open just
+-- while the picker initializes, then restore it. Combined with a
+-- close_all pass to wipe lingering expansion, the new picker renders
+-- only direct children of cwd. pcall guards against API renames.
 vim.keymap.set("n", "<leader>e", function()
   local ok_root, root = pcall(function() return LazyVim.root() end)
   local cwd = (ok_root and root) or vim.fn.getcwd()
-  Snacks.explorer({ cwd = cwd, follow_file = false })
-  vim.schedule(function()
-    pcall(function()
-      local Tree = require("snacks.explorer.tree")
-      Tree:close_all(cwd)
-      for _, p in ipairs(Snacks.picker.get({ source = "explorer" }) or {}) do
-        p:find()
-      end
-    end)
+  pcall(function()
+    local Tree = require("snacks.explorer.tree")
+    Tree:close_all(cwd)
+    local orig_open = Tree.open
+    Tree.open = function(_self, _path) end -- no-op during picker init
+    Snacks.explorer({ cwd = cwd, follow_file = false })
+    vim.schedule(function() Tree.open = orig_open end)
   end)
 end, { desc = "Explorer (root, collapsed, no reveal)" })
 
