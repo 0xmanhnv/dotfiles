@@ -26,20 +26,27 @@ vim.keymap.set("n", "n", "nzzzv", { desc = "Next search result (centered)" })
 vim.keymap.set("n", "N", "Nzzzv", { desc = "Prev search result (centered)" })
 
 -- Force <leader>e to always open the explorer fresh: at project root, no
--- auto-reveal, and with all previously expanded subdirs collapsed.
--- snacks.explorer keeps a module-level Tree singleton whose `node.open`
--- state persists across pickers — even though each picker is created
--- with the correct root cwd, the Tree's expanded state from earlier
--- navigation makes the view feel like it's still in the subdir.
--- close_all collapses every node under the given cwd; pcall guards
--- against version drift (the internal function may change names).
+-- auto-reveal, with all previously expanded subdirs collapsed.
+--
+-- The Tree singleton in snacks.explorer keeps node.open state across
+-- pickers. Worse, every new picker's State.new runs Tree:open(buf_file)
+-- (explorer.lua:47) which re-expands every ancestor of the current
+-- buffer — so a pre-call close_all gets undone immediately. Schedule
+-- close_all AFTER picker init, then re-find to refresh the rendered
+-- list. pcall guards against snacks API churn.
 vim.keymap.set("n", "<leader>e", function()
   local ok_root, root = pcall(function() return LazyVim.root() end)
   local cwd = (ok_root and root) or vim.fn.getcwd()
-  pcall(function()
-    require("snacks.explorer.tree"):close_all(cwd)
-  end)
   Snacks.explorer({ cwd = cwd, follow_file = false })
+  vim.schedule(function()
+    pcall(function()
+      local Tree = require("snacks.explorer.tree")
+      Tree:close_all(cwd)
+      for _, p in ipairs(Snacks.picker.get({ source = "explorer" }) or {}) do
+        p:find()
+      end
+    end)
+  end)
 end, { desc = "Explorer (root, collapsed, no reveal)" })
 
 -- Diagnostic → clipboard helpers. Lets you grab an LSP/linter error and
