@@ -181,6 +181,32 @@ the current user to the `docker` group automatically — log out / `newgrp
 docker` for the group change to take effect in the active shell. On
 macOS, launch OrbStack once after install (Spotlight → "OrbStack").
 
+### SSH terminfo on remote hosts
+
+`$TERM=xterm-ghostty` (and Kitty's `xterm-kitty`, WezTerm's `wezterm`,
+etc.) isn't in the default terminfo database on most servers. Without
+a matching entry the remote shell mis-counts character widths and you
+see duplicated keystrokes / garbled prompts.
+
+Ghostty's `shell-integration-features = ssh-terminfo` (configured in
+`dot_config/ghostty/config.tmpl`) auto-installs the entry the first
+time you SSH into a host — most new servers Just Work.
+
+For hosts that miss the auto-install (older Ghostty version, SSH
+through tmux pass-through, non-Ghostty terminals, servers without
+`tic`), the `ssh-fix-term` helper in `dot_config/zsh/30-aliases.zsh`
+does it manually — once per host, permanent:
+
+```sh
+ssh-fix-term kali@kali
+ssh-fix-term root@10.0.0.5
+```
+
+It pipes the local `$TERM`'s terminfo via SSH and runs `tic -x -` on
+the remote. Requires `infocmp` locally (macOS ships it; Linux pulls
+`ncurses-bin` / `ncurses` from the base package lists) and `tic` on
+the remote (same package, same name).
+
 ---
 
 ## What's inside
