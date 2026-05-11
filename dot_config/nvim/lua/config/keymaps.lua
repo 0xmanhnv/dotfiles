@@ -25,16 +25,22 @@ vim.keymap.set({ "n", "v" }, "<PageUp>",   "<C-u>zz", { desc = "Half page up" })
 vim.keymap.set("n", "n", "nzzzv", { desc = "Next search result (centered)" })
 vim.keymap.set("n", "N", "Nzzzv", { desc = "Prev search result (centered)" })
 
--- Force <leader>e to always open the explorer at project root and never
--- auto-reveal the current buffer. LazyVim's default keymap (from the
--- snacks_explorer extra) calls Snacks.explorer({ cwd = LazyVim.root() })
--- without specifying follow_file, which leaves snacks free to use its
--- cached / default behavior (auto-reveal). Pass follow_file = false
--- explicitly here so toggling <leader>e is predictable.
+-- Force <leader>e to always open the explorer fresh: at project root, no
+-- auto-reveal, and with all previously expanded subdirs collapsed.
+-- snacks.explorer keeps a module-level Tree singleton whose `node.open`
+-- state persists across pickers — even though each picker is created
+-- with the correct root cwd, the Tree's expanded state from earlier
+-- navigation makes the view feel like it's still in the subdir.
+-- close_all collapses every node under the given cwd; pcall guards
+-- against version drift (the internal function may change names).
 vim.keymap.set("n", "<leader>e", function()
-  local ok, root = pcall(function() return LazyVim.root() end)
-  Snacks.explorer({ cwd = (ok and root) or vim.fn.getcwd(), follow_file = false })
-end, { desc = "Explorer (root, no reveal)" })
+  local ok_root, root = pcall(function() return LazyVim.root() end)
+  local cwd = (ok_root and root) or vim.fn.getcwd()
+  pcall(function()
+    require("snacks.explorer.tree"):close_all(cwd)
+  end)
+  Snacks.explorer({ cwd = cwd, follow_file = false })
+end, { desc = "Explorer (root, collapsed, no reveal)" })
 
 -- Diagnostic → clipboard helpers. Lets you grab an LSP/linter error and
 -- paste straight into a search bar / chat / commit message without
