@@ -25,34 +25,17 @@ return {
   ---@module "claudecode"
   ---@type PartialClaudeCodeConfig
   opts = {
-    -- ===== Terminal: floating window, not a side split =====
-    -- Rationale: explorer (0.20) + Claude split (0.35) leaves only ~45%
-    -- of a MacBook screen for the editor — too narrow for the 100-col
-    -- ruler. A float overlays the editor when active and gives the
-    -- entire width back when hidden (<C-,>). Diff review stays clean
-    -- because diff_opts.open_in_new_tab = true sends the comparison to
-    -- its own tab regardless of terminal mode.
-    --
-    -- split_side / split_width_percentage are unused while
-    -- snacks_win_opts.position = "float"; removed to avoid stale config.
+    -- ===== Terminal: side split on the right =====
+    -- Width tuned for a MacBook display: explorer 0.15 (snacks.lua) +
+    -- Claude 0.25 leaves ~0.60 = ~108 cols of editor on a 180-col total
+    -- screen, just enough to keep the 100-col ruler on screen. Bump to
+    -- 0.30 on a wide external monitor if Claude responses feel cramped.
     ---@diagnostic disable-next-line: missing-fields
     terminal = {
       provider = "snacks",
-      auto_close = false, -- keep window/buffer alive to inspect errors
-      snacks_win_opts = {
-        position = "float",
-        width  = 0.8,   -- 80% of screen — room to read responses comfortably
-        height = 0.85,
-        border = "rounded",
-        keys = {
-          claude_hide = {
-            "<C-,>",
-            function(self) self:hide() end,
-            mode = { "n", "t" },
-            desc = "Hide Claude (keeps the conversation alive)",
-          },
-        },
-      },
+      split_side = "right",
+      split_width_percentage = 0.25,
+      auto_close = false, -- keep buffer alive to inspect errors
     },
     -- ===== Diff view: open in a dedicated tab, no terminal sandwich =====
     -- Default behavior keeps the Claude terminal in the same tab while a

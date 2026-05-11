@@ -58,14 +58,15 @@ return {
           -- location but the root stays at cwd — scroll up to see the
           -- top-level project structure.
           --
-          -- Trim the sidebar from snacks's default 40 cols. Use a %-based
-          -- width so the explorer scales with the monitor (MacBook 14"
-          -- vs an external 27" both end up with a reasonable ratio).
-          -- min_width 30 keeps the sidebar readable on small splits /
-          -- narrow windows where 20% would shrink below useful.
+          -- Trim the sidebar so explorer + Claude split + editor all fit
+          -- on a MacBook display (~180 cols): explorer 0.15 + Claude 0.25
+          -- + editor 0.60 = 27 + 45 + 108 cols. The editor side just
+          -- clears the 100-col ruler. min_width 25 keeps filenames legible
+          -- when 15% of a narrow split would shrink the panel below useful.
+          -- On a wide external monitor, 15% still scales up naturally.
           layout = {
             preset = "sidebar",
-            layout = { width = 0.20, min_width = 30 },
+            layout = { width = 0.15, min_width = 25 },
           },
         },
       },
