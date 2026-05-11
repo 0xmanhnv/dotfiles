@@ -17,9 +17,18 @@ return {
       group = vim.api.nvim_create_augroup("persistence_autoload", { clear = true }),
       nested = true, -- let BufEnter/FileType/etc. fire so LSP + treesitter attach
       callback = function()
-        if vim.fn.argc() == 0 then
+        local argc = vim.fn.argc()
+        -- Case 1: `nvim` with no args — restore session for current cwd
+        if argc == 0 then
+          require("persistence").load()
+          return
+        end
+        -- Case 2: `nvim <dir>` — auto-cd autocmd in options.lua already
+        -- changed cwd; restore session for that directory
+        if argc == 1 and vim.fn.isdirectory(vim.fn.argv(0)) == 1 then
           require("persistence").load()
         end
+        -- Case 3: `nvim file.lua` — open just the file, no session restore
       end,
     })
   end,
