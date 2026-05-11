@@ -49,11 +49,15 @@ return {
       enabled = true,
       sources = {
         explorer = {
-          hidden = true,       -- show dotfiles
-          ignored = false,     -- hide gitignored files
-          watch = true,        -- libuv fs_event watcher: auto-refresh when files change on disk
+          hidden = true,   -- show dotfiles
+          ignored = false, -- hide gitignored files
+          watch = true,    -- libuv fs_event watcher: auto-refresh when files change on disk
           auto_close = false,
-          follow_file = false, -- always open at cwd root; don't auto-reveal current buffer
+          -- follow_file kept at default (true): <leader>e auto-reveals
+          -- current buffer in the tree — useful when navigating. The
+          -- session-restore case opens explorer with follow_file=false
+          -- one-shot from plugins/persistence.lua, so first-open after
+          -- restore lands at root.
         },
       },
     },

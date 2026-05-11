@@ -176,15 +176,29 @@ return {
               end
             end
           end
-          -- Try to open neo-tree; if it's not loaded yet (cmd=
-          -- lazy-loaded specs register the command late), retry once
-          -- after another 200ms. pcall wraps an anonymous fn so lua-ls
-          -- doesn't trip on vim.cmd's union type.
-          local ok = pcall(function() vim.cmd("Neotree show") end)
-          if not ok then
-            vim.defer_fn(function()
-              pcall(function() vim.cmd("Neotree show") end)
-            end, 200)
+          -- Open the file tree at project root. Pass follow_file=false
+          -- as a one-shot override so this first post-restore open lands
+          -- at the cwd root instead of auto-revealing deep into wherever
+          -- the restored cursor file lives. Manual `<leader>e` later
+          -- still gets the snacks default (follow_file=true), which
+          -- reveals the current buffer — useful during normal editing.
+          --
+          -- Try snacks.explorer first (this config's actual explorer),
+          -- fall back to neo-tree if installed; retry once after 200ms
+          -- if both miss (lazy-loaded specs register late). rawget
+          -- hides the Snacks lookup from lua-ls's undefined-field check.
+          local function open_root_tree()
+            local snacks = rawget(_G, "Snacks")
+            if snacks and snacks.explorer then
+              return pcall(snacks.explorer, { follow_file = false })
+            end
+            if vim.fn.exists(":Neotree") == 2 then
+              return pcall(function() vim.cmd("Neotree show") end)
+            end
+            return false
+          end
+          if not open_root_tree() then
+            vim.defer_fn(open_root_tree, 200)
           end
         end, 100)
       end,
