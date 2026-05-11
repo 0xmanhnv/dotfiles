@@ -40,8 +40,11 @@ return {
         end
         -- Case 2: `nvim <dir>` — auto-cd autocmd in options.lua already
         -- changed cwd; restore session for that directory
-        if argc == 1 and vim.fn.isdirectory(vim.fn.argv(0)) == 1 then
-          require("persistence").load()
+        if argc == 1 then
+          local arg = vim.fn.argv(0) --[[@as string]]
+          if vim.fn.isdirectory(arg) == 1 then
+            require("persistence").load()
+          end
         end
         -- Case 3: `nvim file.lua` — open just the file, no session restore
       end,
