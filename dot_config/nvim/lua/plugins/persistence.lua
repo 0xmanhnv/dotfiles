@@ -60,7 +60,14 @@ return {
       pattern = "PersistenceLoadPost",
       callback = function()
         vim.schedule(function()
-          vim.cmd("Neotree show")
+          -- Open the file tree. Neo-tree isn't always installed (this
+          -- config uses snacks.explorer instead); try Neotree, fall
+          -- back to Snacks.explorer, no-op if neither is available.
+          if vim.fn.exists(":Neotree") == 2 then
+            pcall(vim.cmd, "Neotree show")
+          elseif _G.Snacks and _G.Snacks.explorer then
+            pcall(_G.Snacks.explorer)
+          end
           for _, buf in ipairs(vim.api.nvim_list_bufs()) do
             if vim.api.nvim_buf_is_loaded(buf) then
               local name = vim.api.nvim_buf_get_name(buf)
