@@ -36,7 +36,8 @@ window-new-tab-position = end
 
 # ----- Background -----------------------------------------------------------
 background-opacity = 1
-background-blur = 20
+# background-blur only takes effect when background-opacity < 1; omit it
+# while we're fully opaque.
 
 # ----- Cursor & Mouse -------------------------------------------------------
 cursor-style = block
