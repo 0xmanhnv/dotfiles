@@ -87,6 +87,18 @@ vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
 -- there regardless of which buffer is focused or what LSP says.
 vim.g.root_spec = { "cwd" }
 
+-- Per-mode cursor: static block in NORMAL/VISUAL (focus reading), fast-blink
+-- thin bar in INSERT (clear typing feedback + mode distinction without
+-- glancing at statusline), horizontal bar in REPLACE (visually distinct from
+-- INSERT — `R` is dangerous). Ghostty's `cursor-style-blink = false` keeps
+-- the shell cursor stable outside Neovim; this guicursor is sent via
+-- DECSCUSR and overrides the terminal default only while Neovim is running.
+vim.opt.guicursor = table.concat({
+  "n-v-c-sm:block",
+  "i-ci-ve:ver25-blinkwait300-blinkoff400-blinkon250",
+  "r-cr-o:hor20",
+}, ",")
+
 -- 1. Enable internal diff with linematch
 vim.opt.diffopt:append("linematch:60")
 vim.opt.diffopt:append("algorithm:histogram")
