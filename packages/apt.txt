@@ -12,7 +12,6 @@ ripgrep
 fd-find
 bat
 jq
-yq
 tree
 htop
 ruby

@@ -151,13 +151,6 @@ if [[ -f /etc/debian_version ]]; then
     return 1
   }
 
-  # starship isn't in Ubuntu/Debian apt repos — install via official script
-  # if missing. Arch and Fedora have starship in their default repos.
-  if ! command -v starship >/dev/null 2>&1; then
-    echo "==> Installing starship (not available in apt)"
-    curl -sSfL https://starship.rs/install.sh | sh -s -- --yes
-  fi
-
   # eza fallback: upstream-packaged apt repo (deb.gierens.de). Only added to
   # Debian main in trixie/13, so Debian 12 / Parrot / Kali / older Ubuntu
   # need this.
@@ -165,7 +158,7 @@ if [[ -f /etc/debian_version ]]; then
     echo "==> Installing eza from deb.gierens.de"
     sudo mkdir -p -m 755 /etc/apt/keyrings
     curl -fsSL https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | \
-      sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+      sudo gpg --batch --yes --dearmor -o /etc/apt/keyrings/gierens.gpg
     echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] https://deb.gierens.de stable main" | \
       sudo tee /etc/apt/sources.list.d/gierens.list >/dev/null
     sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
@@ -183,9 +176,10 @@ if [[ -f /etc/debian_version ]]; then
     rm -f /tmp/zoxide-install.sh
   fi
 
-  # yq fallback: mikefarah/yq Go binary from GitHub releases. The Python yq
-  # in pip is a different tool; we want the Go one (matches Brewfile / dnf).
-  if is_missing yq && ! command -v yq >/dev/null 2>&1; then
+  # yq: mikefarah/yq Go binary from GitHub releases. Deliberately NOT in
+  # apt.txt — Debian/Ubuntu's `yq` package is kislyuk's Python jq wrapper
+  # (different syntax), not the Go tool the Brewfile / dnf install.
+  if ! yq --version 2>/dev/null | grep -qi mikefarah; then
     echo "==> Installing yq from GitHub releases"
     yq_arch="$(dpkg --print-architecture)"
     case "$yq_arch" in
@@ -197,7 +191,113 @@ if [[ -f /etc/debian_version ]]; then
     sudo chmod +x /usr/local/bin/yq
   fi
 
-  # lazygit + glow: not in Debian/Ubuntu/Kali apt repos. Pull from GitHub
+  # Debian-family ships bat as `batcat` and fd as `fdfind` (name clashes
+  # with older packages). Link the expected names into ~/.local/bin, which
+  # ~/.zshrc puts on PATH, so aliases / fzf-tab previews / scripts find them.
+  mkdir -p "$HOME/.local/bin"
+  for pair in batcat:bat fdfind:fd; do
+    src="${pair%%:*}" dst="${pair##*:}"
+    if command -v "$src" >/dev/null 2>&1 && ! command -v "$dst" >/dev/null 2>&1; then
+      ln -sf "$(command -v "$src")" "$HOME/.local/bin/$dst"
+    fi
+  done
+
+  # Debian's nodejs only *suggests* npm, and NodeSource (which bundles it)
+  # is skipped on Kali/Parrot. Mason needs npm for vtsls / pyright /
+  # prettier. Not in apt.txt: NodeSource's nodejs conflicts with apt's npm.
+  if command -v node >/dev/null 2>&1 && ! command -v npm >/dev/null 2>&1; then
+    echo "==> Installing npm (not bundled with this distro's nodejs)"
+    sudo apt-get install -y npm
+  fi
+
+  # openjdk-21 fallback: distros that don't ship the explicit -21 metapackage
+  # (Debian 12, Parrot 6, Kali 2024.x) get default-jdk instead.
+  if is_missing openjdk-21-jdk && ! command -v javac >/dev/null 2>&1; then
+    echo "==> openjdk-21-jdk not in apt — installing default-jdk"
+    sudo apt-get install -y default-jdk
+  fi
+
+  # neovim fallback: follow the upstream pre-built tarball recipe from
+  # https://neovim.io/doc/install/ verbatim — extract to /opt and let the
+  # PATH entry in dot_config/zsh/40-linux.zsh pick it up.
+  #
+  # Trigger conditions (any one):
+  #   - apt has no candidate at all (Parrot lory ships nvim metadata without
+  #     an installable version)
+  #   - apt's version is < 0.11.2, the minimum LazyVim (dot_config/nvim/)
+  #     starts on. Ubuntu 24.04 ships 0.9.5, Debian 13 / Ubuntu 25.10 0.10.4.
+  case "$(uname -m)" in
+    x86_64) nvim_arch=x86_64 ;;
+    aarch64|arm64) nvim_arch=arm64 ;;
+    *) nvim_arch="" ;;
+  esac
+
+  nvim_min=0.11.2
+  nvim_too_old=0
+  if ! is_missing neovim && command -v nvim >/dev/null 2>&1; then
+    nvim_ver="$(nvim --version 2>/dev/null | awk 'NR==1 {sub(/^v/,"",$2); print $2}')"
+    if [[ -n "$nvim_ver" ]] && \
+       [[ "$(printf '%s\n' "$nvim_min" "$nvim_ver" | sort -V | head -1)" != "$nvim_min" ]]; then
+      echo "==> apt's neovim ($nvim_ver) is older than $nvim_min — installing tarball alongside"
+      nvim_too_old=1
+    fi
+  fi
+
+  if [[ -n "$nvim_arch" ]] && \
+     { is_missing neovim || (( nvim_too_old )); } && \
+     [[ ! -x "/opt/nvim-linux-${nvim_arch}/bin/nvim" ]]; then
+    echo "==> Installing neovim from upstream tarball (neovim.io recipe)"
+    tmp="$(mktemp -d)"
+    curl -fsSL \
+      "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${nvim_arch}.tar.gz" \
+      -o "$tmp/nvim.tar.gz"
+    sudo rm -rf "/opt/nvim-linux-${nvim_arch}"
+    sudo tar -C /opt -xzf "$tmp/nvim.tar.gz"
+    rm -rf "$tmp"
+  elif is_missing neovim && [[ -z "$nvim_arch" ]]; then
+    echo "WARNING: arch $(uname -m) unsupported for neovim tarball — install manually" >&2
+  fi
+elif [[ -f /etc/arch-release ]]; then
+  mapfile -t pac_pkgs < <(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/pacman.txt" | grep .)
+  if (( DOCKER_PRESENT )); then
+    mapfile -t pac_pkgs < <(printf '%s\n' "${pac_pkgs[@]}" | grep -vxE 'docker|docker-compose|docker-buildx')
+  fi
+  # -Syu, never bare -Sy: syncing the db without upgrading is a partial
+  # upgrade, which Arch doesn't support (breaks on the next soname bump).
+  sudo pacman -Syu --noconfirm --needed "${pac_pkgs[@]}"
+{{ if .pentest -}}
+  echo "==> Installing pentest toolkit (pentest flag = true)"
+  mapfile -t pac_pentest < <(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/pacman.pentest.txt" | grep .)
+  sudo pacman -S --noconfirm --needed "${pac_pentest[@]}" || \
+    echo "==> Some pentest pacman pkgs unavailable — consider BlackArch overlay"
+{{ end -}}
+elif [[ -f /etc/fedora-release ]]; then
+  # --skip-unavailable: don't fail the whole transaction if a single package
+  # has been renamed / removed in this Fedora release (common for the
+  # rolling-name java-XX-openjdk-devel formulas).
+  mapfile -t dnf_pkgs < <(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/dnf.txt" | grep .)
+  if (( DOCKER_PRESENT )); then
+    mapfile -t dnf_pkgs < <(printf '%s\n' "${dnf_pkgs[@]}" | grep -vxE 'moby-engine|docker-compose')
+  fi
+  sudo dnf install -y --skip-unavailable "${dnf_pkgs[@]}"
+{{ if .pentest -}}
+  echo "==> Installing pentest toolkit (pentest flag = true)"
+  mapfile -t dnf_pentest < <(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/dnf.pentest.txt" | grep .)
+  sudo dnf install -y --skip-unavailable "${dnf_pentest[@]}"
+{{ end -}}
+fi
+
+# --- Fallbacks for every distro ---------------------------------------------
+# Tools that some distro repos lack (or that --skip-unavailable silently
+# dropped): checked by command name, so whichever branch ran above, they end
+# up installed. Fedora, for one, packages neither starship nor lazygit.
+{
+  if ! command -v starship >/dev/null 2>&1; then
+    echo "==> Installing starship (official install script)"
+    curl --proto '=https' --tlsv1.2 -sSfL https://starship.rs/install.sh | sh -s -- --yes
+  fi
+
+  # lazygit + glow: not in Debian/Ubuntu/Kali apt repos, nor Fedora's. Pull from GitHub
   # releases — single static binary inside a tarball each. Layout differs
   # per project (lazygit's binary is at archive root; glow's is nested in a
   # versioned subdir), so extract the whole tarball into a temp dir and
@@ -238,90 +338,38 @@ if [[ -f /etc/debian_version ]]; then
     rm -rf "$tmp"
   }
 
-  if is_missing lazygit && ! command -v lazygit >/dev/null 2>&1; then
+  if ! command -v lazygit >/dev/null 2>&1; then
     echo "==> Installing lazygit from GitHub releases"
     install_github_tarball_binary jesseduffield/lazygit lazygit
   fi
-  if is_missing glow && ! command -v glow >/dev/null 2>&1; then
+  if ! command -v glow >/dev/null 2>&1; then
     echo "==> Installing glow from GitHub releases"
     install_github_tarball_binary charmbracelet/glow glow
   fi
 
-  # openjdk-21 fallback: distros that don't ship the explicit -21 metapackage
-  # (Debian 12, Parrot 6, Kali 2024.x) get default-jdk instead.
-  if is_missing openjdk-21-jdk && ! command -v javac >/dev/null 2>&1; then
-    echo "==> openjdk-21-jdk not in apt — installing default-jdk"
-    sudo apt-get install -y default-jdk
-  fi
-
-  # neovim fallback: follow the upstream pre-built tarball recipe from
-  # https://neovim.io/doc/install/ verbatim — extract to /opt and let the
-  # PATH entry in dot_config/zsh/40-linux.zsh pick it up.
-  #
-  # Trigger conditions (any one):
-  #   - apt has no candidate at all (Parrot lory ships nvim metadata without
-  #     an installable version)
-  #   - apt's candidate is < 0.10 (Ubuntu 24.04 ships 0.9.5; LazyVim, the
-  #     config in dot_config/nvim/, requires 0.10+ and refuses to start)
-  case "$(uname -m)" in
-    x86_64) nvim_arch=x86_64 ;;
-    aarch64|arm64) nvim_arch=arm64 ;;
-    *) nvim_arch="" ;;
-  esac
-
-  nvim_too_old=0
-  if ! is_missing neovim && command -v nvim >/dev/null 2>&1; then
-    nvim_ver="$(nvim --version 2>/dev/null | awk 'NR==1 {sub(/^v/,"",$2); print $2}')"
-    if [[ -n "$nvim_ver" ]]; then
-      nvim_major="${nvim_ver%%.*}"
-      rest="${nvim_ver#*.}"
-      nvim_minor="${rest%%.*}"
-      if (( nvim_major == 0 && nvim_minor < 10 )); then
-        echo "==> apt's neovim ($nvim_ver) is older than 0.10 — installing tarball alongside"
-        nvim_too_old=1
-      fi
+  # delta (git pager, wired in ~/.gitconfig): Debian 12 has no git-delta
+  # package. Without it `git add -p` fails ("mismatched output from
+  # interactive.diffFilter"). Tag has no "v"; musl build = no glibc floor.
+  if ! command -v delta >/dev/null 2>&1; then
+    echo "==> Installing delta from GitHub releases"
+    case "$(uname -m)" in
+      x86_64|amd64)  delta_target=x86_64-unknown-linux-musl ;;
+      aarch64|arm64) delta_target=aarch64-unknown-linux-gnu ;;
+      *)             delta_target="" ;;
+    esac
+    delta_ver="$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
+      https://github.com/dandavison/delta/releases/latest | sed -E 's|.*/||')"
+    if [[ -n "$delta_target" && -n "$delta_ver" ]]; then
+      tmp="$(mktemp -d)"
+      curl -fsSL "https://github.com/dandavison/delta/releases/download/${delta_ver}/delta-${delta_ver}-${delta_target}.tar.gz" \
+        | tar -xz -C "$tmp"
+      sudo install -m 0755 "$tmp/delta-${delta_ver}-${delta_target}/delta" /usr/local/bin/delta
+      rm -rf "$tmp"
+    else
+      echo "WARNING: couldn't resolve a delta build for $(uname -m) — skipping" >&2
     fi
   fi
-
-  if [[ -n "$nvim_arch" ]] && \
-     { is_missing neovim || (( nvim_too_old )); } && \
-     [[ ! -x "/opt/nvim-linux-${nvim_arch}/bin/nvim" ]]; then
-    echo "==> Installing neovim from upstream tarball (neovim.io recipe)"
-    tmp="$(mktemp -d)"
-    curl -fsSL \
-      "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${nvim_arch}.tar.gz" \
-      -o "$tmp/nvim.tar.gz"
-    sudo rm -rf "/opt/nvim-linux-${nvim_arch}"
-    sudo tar -C /opt -xzf "$tmp/nvim.tar.gz"
-    rm -rf "$tmp"
-  elif is_missing neovim && [[ -z "$nvim_arch" ]]; then
-    echo "WARNING: arch $(uname -m) unsupported for neovim tarball — install manually" >&2
-  fi
-elif [[ -f /etc/arch-release ]]; then
-  pac_pkgs="$(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/pacman.txt")"
-  if (( DOCKER_PRESENT )); then
-    pac_pkgs="$(echo "$pac_pkgs" | grep -vxE 'docker|docker-compose|docker-buildx')"
-  fi
-  sudo pacman -Sy --noconfirm --needed $(echo "$pac_pkgs" | tr '\n' ' ')
-{{ if .pentest -}}
-  echo "==> Installing pentest toolkit (pentest flag = true)"
-  sudo pacman -S --noconfirm --needed $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/pacman.pentest.txt" | tr '\n' ' ') || \
-    echo "==> Some pentest pacman pkgs unavailable — consider BlackArch overlay"
-{{ end -}}
-elif [[ -f /etc/fedora-release ]]; then
-  # --skip-unavailable: don't fail the whole transaction if a single package
-  # has been renamed / removed in this Fedora release (common for the
-  # rolling-name java-XX-openjdk-devel formulas).
-  dnf_pkgs="$(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/dnf.txt")"
-  if (( DOCKER_PRESENT )); then
-    dnf_pkgs="$(echo "$dnf_pkgs" | grep -vxE 'moby-engine|docker-compose')"
-  fi
-  sudo dnf install -y --skip-unavailable $(echo "$dnf_pkgs" | tr '\n' ' ')
-{{ if .pentest -}}
-  echo "==> Installing pentest toolkit (pentest flag = true)"
-  sudo dnf install -y --skip-unavailable $(grep -v '^\s*#' "{{ .chezmoi.sourceDir }}/packages/dnf.pentest.txt" | tr '\n' ' ')
-{{ end -}}
-fi
+}
 
 # --- Docker post-install (Linux, real hosts only) --------------------------
 # Skip in Docker / CI containers — there's no systemd to enable, and adding
@@ -345,6 +393,7 @@ if [[ ! -f /.dockerenv ]] && [[ "${CI:-}" != "true" ]] \
   fi
 fi
 
+{{ if and .nerd_font (ne .profile "server") -}}
 # JetBrainsMono Nerd Font — starship's prompt and eza's --icons need Nerd
 # Font glyphs (the boxes you see otherwise are unrenderable codepoints).
 # Brewfile installs font-jetbrains-mono-nerd-font on macOS; on Linux pull
@@ -366,4 +415,5 @@ if ! ls "$nf_dir"/*.ttf >/dev/null 2>&1; then
   fi
   echo "==> Set your terminal font to 'JetBrainsMono Nerd Font' to render starship/eza icons"
 fi
+{{ end -}}
 {{- end }}
