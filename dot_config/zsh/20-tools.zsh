@@ -43,15 +43,35 @@ fi
 #   2. The export plugin's *precmd* hook, which forks `jenv javahome`
 #      (~50ms) after EVERY command you run.
 # JAVA_HOME can only change when the directory changes (.java-version) or
-# the jenv version changes, so recompute on chpwd and after `jenv ...`.
+# the jenv version changes, so recompute on chpwd and after `jenv ...` —
+# and resolve the version in pure zsh (same precedence as jenv: $JENV_VERSION,
+# nearest .java-version upwards, global ~/.jenv/version) so a `cd` costs no
+# fork. `jenv javahome` (~50ms) only runs for "system" / unknown versions.
 if command -v jenv >/dev/null 2>&1; then
   [[ -d "$HOME/.jenv/bin" ]] && export PATH="$HOME/.jenv/bin:$PATH"
   export PATH="$HOME/.jenv/shims:$PATH"
   export JENV_SHELL=zsh JENV_LOADED=1 JENV_FORCEJAVAHOME=true
 
   _jenv_set_java_home() {
-    local java_home
-    java_home="$(command jenv javahome 2>/dev/null)"
+    local root="${JENV_ROOT:-$HOME/.jenv}" v="${JENV_VERSION:-}" d="$PWD" java_home
+    if [[ -z "$v" ]]; then
+      while true; do
+        if [[ -r "$d/.java-version" ]]; then v="$(<"$d/.java-version")"; break; fi
+        [[ -z "$d" || "$d" == / ]] && break
+        d="${d:h}"
+      done
+    fi
+    [[ -z "$v" && -r "$root/version" ]] && v="$(<"$root/version")"
+    v="${v//[[:space:]]/}"
+    # Unchanged since last time → JAVA_HOME is already right.
+    [[ -n "${_jenv_resolved+x}" && "$v" == "$_jenv_resolved" ]] && return
+    _jenv_resolved="$v"
+
+    if [[ -n "$v" && "$v" != system && -d "$root/versions/$v" ]]; then
+      java_home="$root/versions/$v"
+    else
+      java_home="$(command jenv javahome 2>/dev/null)"
+    fi
     if [[ -n "$java_home" ]]; then
       export JAVA_HOME="$java_home"
     else
@@ -103,8 +123,8 @@ command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
 # Modern fzf (>= 0.48, Brew/Arch/Fedora) supports `fzf --zsh`. Older Linux
 # packaging (Debian/Ubuntu apt) ships scripts separately under /usr/share/.
 if command -v fzf >/dev/null 2>&1; then
-  if fzf --zsh >/dev/null 2>&1; then
-    source <(fzf --zsh)
+  if _fzf_init="$(fzf --zsh 2>/dev/null)"; then
+    eval "$_fzf_init"
   else
     for _fzf_init in \
       /usr/share/doc/fzf/examples/key-bindings.zsh \
@@ -117,6 +137,6 @@ if command -v fzf >/dev/null 2>&1; then
       /usr/local/opt/fzf/shell/completion.zsh; do
       [[ -r "$_fzf_init" ]] && source "$_fzf_init"
     done
-    unset _fzf_init
   fi
+  unset _fzf_init
 fi

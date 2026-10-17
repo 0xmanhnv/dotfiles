@@ -43,7 +43,11 @@ if [[ -d "$HOME/Library/Android/sdk" ]]; then
   export ANDROID_SDK_ROOT="$ANDROID_HOME"
   [[ -d "$ANDROID_HOME/cmdline-tools/latest/bin" ]] && export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
   [[ -d "$ANDROID_HOME/platform-tools" ]]           && export PATH="$ANDROID_HOME/platform-tools:$PATH"
-  for d in "$ANDROID_HOME/build-tools/"*; do
-    [[ -d "$d" ]] && export PATH="$d:$PATH" && break
-  done
+  # Newest stable build-tools: numeric sort, descending, skipping -rcN
+  # previews (fall back to them only if nothing else is installed).
+  _bt=("$ANDROID_HOME"/build-tools/*(N/nOn))
+  _bt_stable=(${_bt:#*-rc*})
+  (( $#_bt_stable )) && _bt=($_bt_stable)
+  (( $#_bt )) && export PATH="$_bt[1]:$PATH"
+  unset _bt _bt_stable
 fi

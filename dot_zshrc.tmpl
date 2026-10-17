@@ -91,9 +91,6 @@ zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 # === Keybindings ===
 bindkey -e   # emacs-style
 
-# === Base PATH (modular config below may extend) ===
-export PATH="$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH"
-
 # === Modular config (env, PATH, tools, aliases — see ~/.config/zsh/) ===
 () {
   setopt local_options null_glob
@@ -102,24 +99,19 @@ export PATH="$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH"
   done
 }
 
+# === Your own bins win ===
+# Prepended after the modules so ~/bin and ~/.local/bin sit above Homebrew,
+# gvm and jenv (typeset -U keeps this first occurrence).
+path=("$HOME/bin" "$HOME/.local/bin" $path)
+
 # === Plugins ===
 # Order matters:
-#   1. zsh-autosuggestions    — must come before syntax-highlighting
-#   2. fzf-tab                — must come BEFORE syntax-highlighting (its README)
+#   1. fzf-tab                — after compinit, BEFORE plugins that wrap
+#                               widgets (autosuggestions, syntax-highlighting)
+#   2. zsh-autosuggestions
 #   3. zsh-syntax-highlighting
 #   4. zsh-history-substring-search — must come AFTER syntax-highlighting
 ZSH_PLUGINS_DIR="${ZSH_PLUGINS_DIR:-$HOME/.local/share/zsh/plugins}"
-
-# Async + buffer cap: keep zle responsive on slow terminals (code-server's
-# xterm.js, SSH over high-RTT links, low-CPU boxes). Async runs the lookup
-# in a forked subshell via zsh/zpty so each keystroke doesn't block the
-# editor; the buffer cap stops suggesting once the input passes 20 chars,
-# where lookups get expensive and the suggestion is rarely useful.
-export ZSH_AUTOSUGGEST_USE_ASYNC=1
-export ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
-
-[[ -s "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] && \
-  source "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
 
 if [[ -s "$ZSH_PLUGINS_DIR/fzf-tab/fzf-tab.plugin.zsh" ]]; then
   source "$ZSH_PLUGINS_DIR/fzf-tab/fzf-tab.plugin.zsh"
@@ -152,12 +144,24 @@ if [[ -s "$ZSH_PLUGINS_DIR/fzf-tab/fzf-tab.plugin.zsh" ]]; then
                  || cat "$realpath" 2>/dev/null'
 {{- end }}
   zstyle ':fzf-tab:complete:(kill|ps):argument-rest' \
-    fzf-preview 'ps -o pid,cmd -p $word 2>/dev/null'
+    fzf-preview 'ps -o pid,command -p $word 2>/dev/null'
   zstyle ':fzf-tab:complete:git-(add|diff|restore):*' \
     fzf-preview 'git diff --color=always -- "$realpath" 2>/dev/null | head -200'
   zstyle ':fzf-tab:complete:git-(checkout|switch|branch):*' \
     fzf-preview 'git log --color=always --oneline --graph -20 "$word" 2>/dev/null'
 fi
+
+
+# Async + buffer cap: keep zle responsive on slow terminals (code-server's
+# xterm.js, SSH over high-RTT links, low-CPU boxes). Async runs the lookup
+# in a forked subshell via zsh/zpty so each keystroke doesn't block the
+# editor; the buffer cap stops suggesting once the input passes 20 chars,
+# where lookups get expensive and the suggestion is rarely useful.
+export ZSH_AUTOSUGGEST_USE_ASYNC=1
+export ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
+
+[[ -s "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] && \
+  source "$ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
 
 {{- if not .slow_terminal }}
 [[ -s "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && \
