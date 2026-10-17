@@ -4,6 +4,7 @@ brew "gh"
 brew "neovim"
 brew "tmux"
 brew "zsh"
+brew "chezmoi"         # Keeps this repo's manager on `brew upgrade`
 
 # Modern replacements
 brew "fzf"
@@ -25,6 +26,8 @@ brew "lazygit"         # Git TUI — pairs nicely with tmux
 brew "git-delta"       # Pretty diffs (wired up in dot_gitconfig.tmpl)
 brew "tealdeer"        # Fast Rust impl of tldr — `tldr <cmd>` for examples
 brew "glow"            # Render markdown in the terminal
+brew "tree-sitter-cli" # nvim-treesitter (main branch) compiles parsers with it
+brew "shellcheck"      # Lint scripts/*.sh locally, same as CI
 
 # Languages — pin to LTS / current stable. jenv manages JDK switching; gvm
 # (manual installer) handles per-project Go versions when needed.
