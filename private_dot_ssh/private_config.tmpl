@@ -11,6 +11,11 @@
 #       IdentityFile ~/.ssh/id_ed25519
 #
 # Missing config.local is non-fatal on OpenSSH 7.3+ (silently skipped).
+{{- if eq .chezmoi.os "darwin" }}
+# UseKeychain is an Apple-OpenSSH-only option; a Homebrew / MacPorts ssh
+# would refuse the whole file without this.
+IgnoreUnknown UseKeychain
+{{- end }}
 Include config.local
 
 # Catch-all secure defaults — applied to any host not matched in config.local.

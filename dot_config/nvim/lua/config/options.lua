@@ -129,11 +129,19 @@ vim.opt.clipboard = "unnamedplus"
 -- sequences which Ghostty intercepts and writes into the host clipboard.
 -- Requires tmux `set -g set-clipboard on` (already configured) so the
 -- sequence propagates out of nested tmux.
+--
+-- Copy only: OSC 52 *paste* asks the terminal to read the host clipboard,
+-- which Ghostty gates behind a permission popup on every `p` (and under
+-- tmux can block for seconds). Paste from the unnamed register instead —
+-- for text from the host, use the terminal's own paste (Cmd-V).
 if vim.env.SSH_TTY ~= nil then
   local osc52 = require("vim.ui.clipboard.osc52")
+  local function paste()
+    return { vim.fn.split(vim.fn.getreg(""), "\n"), vim.fn.getregtype("") }
+  end
   vim.g.clipboard = {
-    name = "OSC 52",
-    copy  = { ["+"] = osc52.copy("+"),  ["*"] = osc52.copy("*") },
-    paste = { ["+"] = osc52.paste("+"), ["*"] = osc52.paste("*") },
+    name = "OSC 52 (copy only)",
+    copy  = { ["+"] = osc52.copy("+"), ["*"] = osc52.copy("*") },
+    paste = { ["+"] = paste,           ["*"] = paste },
   }
 end
