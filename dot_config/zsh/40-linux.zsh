@@ -1,9 +1,6 @@
 # Linux-only config. Skipped on macOS via .chezmoiignore.
 
-# Linuxbrew
-if [[ -x /home/linuxbrew/.linuxbrew/bin/brew ]]; then
-  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-fi
+# Linuxbrew is set up in 05-brew.zsh.
 
 # Snap
 [[ -d /snap/bin ]] && export PATH="$PATH:/snap/bin"
@@ -19,8 +16,3 @@ unset _d
 # Flatpak
 [[ -d "$HOME/.local/share/flatpak/exports/bin" ]] && \
   export PATH="$PATH:$HOME/.local/share/flatpak/exports/bin"
-
-# Ghostty shell integration (Ghostty exports GHOSTTY_RESOURCES_DIR when launching zsh)
-if [[ -n "${GHOSTTY_RESOURCES_DIR:-}" && -f "$GHOSTTY_RESOURCES_DIR/shell-integration/zsh/ghostty.zsh" ]]; then
-  source "$GHOSTTY_RESOURCES_DIR/shell-integration/zsh/ghostty.zsh"
-fi

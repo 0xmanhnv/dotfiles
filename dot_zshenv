@@ -3,6 +3,14 @@
 # present. Each entry guarded so a fresh machine without these tools doesn't
 # get a polluted PATH or a failing source.
 
+# Keep PATH / FPATH free of duplicates. Every nested shell (tmux pane, nvim
+# :terminal, `exec zsh`) re-runs the prepends below and in ~/.config/zsh/;
+# -U keeps the first (= highest-priority) occurrence and drops the rest.
+# Note: -U only dedupes on *array* assignment (`path=(...)`), not on the
+# usual `export PATH="x:$PATH"` — hence the `path=($path)` at the end of
+# this file and of ~/.zshrc.
+typeset -gU path fpath
+
 # TERM safety: SSH and tmux propagate the local terminal's $TERM (e.g.
 # xterm-ghostty, alacritty, wezterm) to remote/inner shells, but the
 # remote box may not have the matching terminfo entry. With an unknown
@@ -31,3 +39,5 @@ fi
 
 # Foundry (Ethereum dev toolchain)
 [[ -d "$HOME/.foundry/bin" ]] && export PATH="$PATH:$HOME/.foundry/bin"
+
+path=($path)

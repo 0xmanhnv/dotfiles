@@ -6,12 +6,14 @@
 #   ~/.config/zsh/*.zsh      env, PATH, tool init, aliases (modular by topic/OS)
 #   ~/.zshrc.local           machine-specific overrides (not tracked)
 #
-# Plugins are git-cloned by run_once_before_02-install-zsh-plugins.sh into:
+# Plugins are git-cloned (and refreshed weekly) by .chezmoiexternal.toml into:
 #   ~/.local/share/zsh/plugins/<name>/<name>.zsh
 # ==============================================================================
 
 # === Banner ===
-GREEN="\033[1;32m"; YELLOW="\033[1;33m"; RED="\033[1;31m"; RESET="\033[0m"
+# Only in the outermost shell (a fresh terminal window/tab). Skipped inside
+# tmux panes, Neovim's :terminal and nested shells, where it's just noise.
+if [[ -z "${TMUX:-}" && -z "${NVIM:-}" && "${SHLVL:-1}" -le 1 ]]; then
 cat <<'EOF'
                                                _oo0oo_
                                               o8888888o
@@ -34,25 +36,54 @@ cat <<'EOF'
 
                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EOF
-echo -e "                                ${GREEN}Buddha Bless:${RESET} ${RED}Critical ${YELLOW}Bugs Incoming${RESET}"
+print -P "                                %B%F{green}Buddha Bless:%f %F{red}Critical %F{yellow}Bugs Incoming%f%b"
+fi
 
 # === History ===
 export HISTFILE="$HOME/.zsh_history"
 export HISTSIZE=50000
 export SAVEHIST=50000
 setopt EXTENDED_HISTORY HIST_EXPIRE_DUPS_FIRST HIST_IGNORE_DUPS HIST_IGNORE_SPACE
-setopt HIST_VERIFY SHARE_HISTORY INC_APPEND_HISTORY
+# SHARE_HISTORY already appends incrementally; INC_APPEND_HISTORY on top is
+# redundant (zsh docs: set only one of the two).
+setopt HIST_VERIFY SHARE_HISTORY
 
 # === Directory navigation ===
 setopt AUTO_CD AUTO_PUSHD PUSHD_IGNORE_DUPS
 
 # === Completion (cached daily for fast startup) ===
+# Homebrew's completion dir must be on fpath BEFORE compinit, otherwise
+# gh / brew / chezmoi / ... completions are missing. `brew shellenv` (in
+# 40-darwin.zsh / 40-linux.zsh) adds it too, but that runs after this.
+for _d in /opt/homebrew/share/zsh/site-functions \
+          /usr/local/share/zsh/site-functions \
+          /home/linuxbrew/.linuxbrew/share/zsh/site-functions; do
+  [[ -d "$_d" ]] && fpath=("$_d" $fpath)
+done
+unset _d
+
 autoload -Uz compinit
-if [[ -n ${ZDOTDIR:-$HOME}/.zcompdump(#qN.mh+24) ]]; then
-  compinit
-else
-  compinit -C
-fi
+() {
+  # (#q...) glob qualifiers need extended_glob; inside [[ ]] they're
+  # otherwise taken literally and the test is always true.
+  setopt local_options extended_glob
+  local dump="${ZDOTDIR:-$HOME}/.zcompdump" stamp d rebuild=0
+  stamp="${dump}.fpath"
+  # Rebuild (full scan + security audit) when the dump is missing or >24h
+  # old, when the set of fpath dirs changed since it was built, or when any
+  # fpath dir is newer than it (`brew install` dropping a new _completion
+  # bumps the dir mtime). Otherwise trust the cache: -C skips both.
+  [[ ! -s "$dump" || -n $dump(#qN.mh+24) ]] && rebuild=1
+  [[ "$(<$stamp 2>/dev/null)" == "$fpath" ]] || rebuild=1
+  for d in $fpath; do [[ "$d" -nt "$dump" ]] && { rebuild=1; break; }; done
+  if (( rebuild )); then
+    # compinit only rewrites the dump when the function set changed, so
+    # touch it to reset the clock either way.
+    compinit -d "$dump" && touch "$dump" && print -r -- "$fpath" >| "$stamp"
+  else
+    compinit -C -d "$dump"
+  fi
+}
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
@@ -151,3 +182,8 @@ command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
 
 # === Machine-specific overrides (not tracked) ===
 [[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
+
+# Collapse duplicates added by `export PATH="x:$PATH"` lines above (and by
+# macOS path_helper in /etc/zprofile); see the typeset -U in ~/.zshenv.
+path=($path)
+fpath=($fpath)

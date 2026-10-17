@@ -44,8 +44,11 @@ take() { mkdir -p -- "$1" && cd -P -- "$1" || return; }
 # Sets the terminal tab title to current path (idle) / running command (active).
 # Uses add-zsh-hook so other plugins/configs can also register precmd/preexec.
 autoload -Uz add-zsh-hook
+# preexec prints the command line raw (-r, no -P): prompt expansion would
+# mangle any `%` in it (`printf "%d"` → the cwd), and control chars could
+# terminate the escape sequence early.
 _set_term_title_precmd()  { print -Pn '\e]0;%~\a'; }
-_set_term_title_preexec() { print -Pn "\e]0;$1\a"; }
+_set_term_title_preexec() { print -rn -- $'\e]0;'"${1//[[:cntrl:]]/ }"$'\a'; }
 add-zsh-hook precmd  _set_term_title_precmd
 add-zsh-hook preexec _set_term_title_preexec
 
