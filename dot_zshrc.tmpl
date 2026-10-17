@@ -74,7 +74,9 @@ autoload -Uz compinit
   # fpath dir is newer than it (`brew install` dropping a new _completion
   # bumps the dir mtime). Otherwise trust the cache: -C skips both.
   [[ ! -s "$dump" || -n $dump(#qN.mh+24) ]] && rebuild=1
-  [[ "$(<$stamp 2>/dev/null)" == "$fpath" ]] || rebuild=1
+  # Check -r first: `$(<file)` on a missing file errors even with
+  # 2>/dev/null — the first shell on a fresh machine printed "no such file".
+  [[ -r "$stamp" && "$(<$stamp)" == "$fpath" ]] || rebuild=1
   for d in $fpath; do [[ "$d" -nt "$dump" ]] && { rebuild=1; break; }; done
   if (( rebuild )); then
     # compinit only rewrites the dump when the function set changed, so

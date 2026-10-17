@@ -14,7 +14,7 @@ jobs:
     name: lint (shellcheck, zsh -n, tmux)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install tools
         run: |
           sudo apt-get update -qq
@@ -50,7 +50,7 @@ jobs:
     name: apply --exclude=scripts (macOS)
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Apply and verify
         run: |
           set -euo pipefail
@@ -98,7 +98,7 @@ jobs:
     name: bootstrap end-to-end (Ubuntu 24.04)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Apply this dotfiles repo via chezmoi inside Ubuntu container
         run: |
           docker run --rm -v "$PWD:/dotfiles:ro" ubuntu:24.04 bash -c '
@@ -137,7 +137,7 @@ jobs:
     name: bootstrap end-to-end (Fedora)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Apply via chezmoi inside Fedora container
         run: |
           docker run --rm -v "$PWD:/dotfiles:ro" fedora:latest bash -c '
@@ -157,7 +157,7 @@ jobs:
     name: bootstrap end-to-end (Kali rolling)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Apply via chezmoi inside Kali container
         run: |
           docker run --rm -v "$PWD:/dotfiles:ro" kalilinux/kali-rolling bash -c '
@@ -184,7 +184,7 @@ jobs:
     name: bootstrap end-to-end (Debian 12 bookworm — exercises fallbacks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Apply via chezmoi inside Debian bookworm container
         run: |
           docker run --rm -v "$PWD:/dotfiles:ro" debian:12-slim bash -c '
@@ -222,7 +222,7 @@ jobs:
     name: template render (nerd_font=false ASCII fallback)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install chezmoi
         run: sh -c "$(curl --proto =https -fsLS https://get.chezmoi.io)" -- -b /usr/local/bin
       - name: Render templates with nerd_font=false and assert ASCII output
