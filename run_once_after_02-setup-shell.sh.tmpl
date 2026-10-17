@@ -4,10 +4,9 @@
 # file), so we don't duplicate it here.
 set -euo pipefail
 
-# Minimal Docker images and CI runners don't always export USER/SHELL —
-# derive them defensively so `set -u` doesn't abort.
+# Minimal Docker images and CI runners don't always export USER — derive it
+# defensively so `set -u` doesn't abort.
 me="${USER:-$(id -un)}"
-current_shell="${SHELL:-}"
 
 # Compare by basename + check the actual passwd entry, not by full path:
 # - $SHELL might be /bin/zsh (system) while command -v finds /opt/homebrew/

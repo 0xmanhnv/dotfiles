@@ -5,20 +5,90 @@ on:
     branches: [main]
   pull_request:
 
+# Every verification goes through `check "<label>" <command...>`, which prints
+# ✓/✗ and exits non-zero on failure. (The old `test ... && echo ✓` style never
+# failed a job: a false `&&` list doesn't trip `set -e`.)
+
 jobs:
-  shellcheck:
-    name: shellcheck (scripts/*.sh)
+  lint:
+    name: lint (shellcheck, zsh -n, tmux)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run shellcheck
-        uses: ludeeus/action-shellcheck@master
-        env:
-          # SC1090/SC1091: shellcheck can't follow dynamic `source` paths — fine,
-          # we guard them at runtime with [[ -s ]] / command -v.
-          SHELLCHECK_OPTS: -e SC1090 -e SC1091
-        with:
-          scandir: ./scripts
+      - name: Install tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq zsh shellcheck tmux
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+      - name: Render templates
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/render
+          for f in run_*.tmpl; do
+            chezmoi --source="$PWD" execute-template < "$f" > "/tmp/render/${f%.tmpl}"
+          done
+          chezmoi --source="$PWD" execute-template < dot_zshrc.tmpl > /tmp/render/zshrc
+          chezmoi --source="$PWD" execute-template < .chezmoiexternal.toml > /tmp/render/externals.toml
+      - name: shellcheck (scripts/ + rendered run_* scripts)
+        # SC1090/SC1091: shellcheck can't follow dynamic `source` paths — fine,
+        # we guard them at runtime with [[ -s ]] / command -v.
+        run: shellcheck -S warning -e SC1090 -e SC1091 scripts/*.sh /tmp/render/*.sh
+      - name: zsh -n (syntax check every zsh file)
+        run: |
+          set -euo pipefail
+          for f in dot_zshenv dot_config/zsh/*.zsh /tmp/render/zshrc; do
+            zsh -n "$f" && echo "✓ $f"
+          done
+      - name: tmux config parses
+        run: tmux -L ci -f /dev/null start-server \; source-file -n dot_tmux.conf
+
+  # Mirrors `bootstrap.sh --minimal` on the primary OS: dotfiles + externals,
+  # no run_* scripts. Catches macOS-only template branches and zsh startup
+  # errors that the Linux containers never render.
+  macos-minimal:
+    name: apply --exclude=scripts (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply and verify
+        run: |
+          set -euo pipefail
+          check() { local m="$1"; shift; if "$@"; then echo "✓ $m"; else echo "✗ $m"; exit 1; fi; }
+          brew install -q chezmoi
+          # Hosted runners leave brew's zsh dirs group-writable, which makes
+          # compinit stop and ask about "insecure directories" (brew's
+          # documented fix; a normal brew install doesn't need it).
+          chmod -R go-w "$(brew --prefix)/share/zsh"
+          chezmoi --source="$PWD" apply --exclude=scripts --verbose
+
+          check "~/.zshrc"                 test -f ~/.zshrc
+          check "~/.config/zsh/05-brew"    test -f ~/.config/zsh/05-brew.zsh
+          check "ghostty config"           test -f ~/.config/ghostty/config
+          check "nvim config"              test -f ~/.config/nvim/init.lua
+          check "linux module skipped"     test ! -e ~/.config/zsh/40-linux.zsh
+          # Externals are not scripts, so --minimal must still get plugins
+          for p in zsh-autosuggestions fzf-tab zsh-syntax-highlighting zsh-history-substring-search; do
+            check "plugin $p" test -d ~/.local/share/zsh/plugins/$p/.git
+          done
+
+          # Shell starts without errors. Run it under a pseudo-terminal
+          # (`script`): without a TTY, zle can't load and every interactive
+          # zsh complains — a CI artifact, not a dotfiles bug. The PTY merges
+          # stdout/stderr, so look for zsh's error shapes instead.
+          out="$(script -q /dev/null zsh -lic exit 2>&1 || true)"
+          if grep -Eiq "command not found|no such file|parse error|bad (pattern|substitution)|not found:|insecure directories" <<<"$out"; then
+            echo "✗ zsh startup errors:"; echo "$out"; exit 1
+          fi
+          echo "✓ zsh starts cleanly"
+          check "gst alias"  zsh -lic 'type gst >/dev/null'
+          check "take fn"    zsh -lic 'type take >/dev/null'
+          check "brew on PATH before modules" zsh -lic '[[ -n $BREW_PREFIX ]]'
+          # ${#${(u)path}} would count characters of the joined string;
+          # collect into an array first. The inner zsh = a nested shell.
+          check "no duplicate PATH entries" \
+            zsh -lic 'u=(${(u)path}); (( ${#path} == ${#u} ))'
+          check "no duplicates in a nested shell" \
+            zsh -lic 'zsh -ic '"'"'u=(${(u)path}); (( ${#path} == ${#u} ))'"'"
 
   bootstrap-ubuntu:
     name: bootstrap end-to-end (Ubuntu 24.04)
@@ -29,6 +99,7 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/dotfiles:ro" ubuntu:24.04 bash -c '
             set -euo pipefail
+            check() { local m="$1"; shift; if "$@"; then echo "✓ $m"; else echo "✗ $m"; exit 1; fi; }
             export DEBIAN_FRONTEND=noninteractive
             apt-get update -qq
             apt-get install -y -qq curl sudo git ca-certificates
@@ -43,21 +114,19 @@ jobs:
 
             echo
             echo "===== POST-APPLY VERIFICATION ====="
-
-            # Files present
-            test -f ~/.zshrc                              && echo "✓ ~/.zshrc"
-            test -d ~/.config/zsh                         && echo "✓ ~/.config/zsh/"
-            test -d ~/.local/share/zsh/plugins/zsh-autosuggestions   && echo "✓ autosuggestions"
-            test -d ~/.local/share/zsh/plugins/fzf-tab               && echo "✓ fzf-tab"
-            test -d ~/.local/share/zsh/plugins/zsh-syntax-highlighting && echo "✓ syntax-highlighting"
+            check "~/.zshrc"              test -f ~/.zshrc
+            check "~/.config/zsh/"        test -d ~/.config/zsh
+            check "darwin module skipped" test ! -e ~/.config/zsh/40-darwin.zsh
+            for p in zsh-autosuggestions fzf-tab zsh-syntax-highlighting zsh-history-substring-search; do
+              check "plugin $p" test -d ~/.local/share/zsh/plugins/$p
+            done
 
             # Shell loads cleanly + aliases work
-            zsh -lic "
-              type gst >/dev/null && echo \"✓ gst alias\"
-              type take >/dev/null && echo \"✓ take fn\"
-              command -v starship >/dev/null && echo \"✓ starship\"
-              exit
-            "
+            check "gst alias" zsh -lic "type gst >/dev/null"
+            check "take fn"   zsh -lic "type take >/dev/null"
+            check "starship"  zsh -lic "command -v starship >/dev/null"
+            check "nvim"      zsh -lic "command -v nvim >/dev/null"
+            check "delta"     zsh -lic "command -v delta >/dev/null"
           '
 
   bootstrap-fedora:
@@ -69,13 +138,15 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/dotfiles:ro" fedora:latest bash -c '
             set -euo pipefail
+            check() { local m="$1"; shift; if "$@"; then echo "✓ $m"; else echo "✗ $m"; exit 1; fi; }
             dnf install -y -q curl sudo git
 
             sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
 
             chezmoi --source=/dotfiles apply --verbose
 
-            zsh -lic "type gst >/dev/null && echo zsh-OK; exit"
+            check "gst alias" zsh -lic "type gst >/dev/null"
+            check "starship"  zsh -lic "command -v starship >/dev/null"
           '
 
   bootstrap-kali:
@@ -87,6 +158,7 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/dotfiles:ro" kalilinux/kali-rolling bash -c '
             set -euo pipefail
+            check() { local m="$1"; shift; if "$@"; then echo "✓ $m"; else echo "✗ $m"; exit 1; fi; }
             export DEBIAN_FRONTEND=noninteractive
             apt-get update -qq
             apt-get install -y -qq curl sudo git ca-certificates
@@ -95,7 +167,8 @@ jobs:
 
             chezmoi --source=/dotfiles apply --verbose
 
-            zsh -lic "type gst >/dev/null && echo zsh-OK; exit"
+            check "gst alias" zsh -lic "type gst >/dev/null"
+            check "starship"  zsh -lic "command -v starship >/dev/null"
           '
 
   # Debian 12 is the explicit target for the apt-cache-policy filter and the
@@ -112,6 +185,7 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/dotfiles:ro" debian:12-slim bash -c '
             set -euo pipefail
+            check() { local m="$1"; shift; if "$@"; then echo "✓ $m"; else echo "✗ $m"; exit 1; fi; }
             export DEBIAN_FRONTEND=noninteractive
             apt-get update -qq
             apt-get install -y -qq curl sudo git ca-certificates gpg
@@ -122,19 +196,18 @@ jobs:
 
             echo
             echo "===== FALLBACK INSTALLER VERIFICATION ====="
-            command -v eza      >/dev/null && echo "✓ eza (deb.gierens.de fallback)"
-            command -v zoxide   >/dev/null && echo "✓ zoxide (install-script fallback)"
-            command -v yq       >/dev/null && echo "✓ yq (GitHub-release fallback)"
-            command -v starship >/dev/null && echo "✓ starship"
-            test -x /opt/nvim-linux-x86_64/bin/nvim && \
-              echo "✓ neovim (tarball fallback for too-old apt nvim)"
-            test -d "$HOME/.local/share/fonts/JetBrainsMonoNerdFont" && \
-              echo "✓ JetBrainsMono Nerd Font installed"
+            check "eza (deb.gierens.de fallback)"     command -v eza
+            check "zoxide (install-script fallback)"  command -v zoxide
+            check "yq (GitHub-release fallback)"      command -v yq
+            check "starship"                          command -v starship
+            check "neovim (tarball fallback for too-old apt nvim)" \
+              test -x /opt/nvim-linux-x86_64/bin/nvim
+            check "JetBrainsMono Nerd Font installed" \
+              test -d "$HOME/.local/share/fonts/JetBrainsMonoNerdFont"
           '
 
-  # Render-only test for nerd_font=false. No Docker, no chezmoi binary
-  # install via the chezmoi installer — just feed each template through
-  # `chezmoi execute-template` against a temp source dir whose
+  # Render-only test for nerd_font=false. No Docker — just feed each template
+  # through `chezmoi execute-template` against a temp source dir whose
   # .chezmoidata.yaml flips the flag, then assert the ASCII branch landed.
   template-nerd-font-false:
     name: template render (nerd_font=false ASCII fallback)
@@ -146,6 +219,9 @@ jobs:
       - name: Render templates with nerd_font=false and assert ASCII output
         run: |
           set -euo pipefail
+          check()     { local m="$1"; shift; if "$@"; then echo "✓ $m"; else echo "✗ $m"; exit 1; fi; }
+          has()       { grep -q -- "$1" <<<"$2"; }
+          lacks()     { ! grep -q -- "$1" <<<"$2"; }
           src="$(mktemp -d)"
           cp -r "$PWD"/. "$src/"
           sed -i "s/^nerd_font: true/nerd_font: false/" "$src/.chezmoidata.yaml"
@@ -155,14 +231,14 @@ jobs:
           zshrc_out="$(chezmoi --source="$src" execute-template < "$src/dot_zshrc.tmpl")"
 
           # Starship: ASCII labels, no clock glyph, no Nerd Font OS icons
-          grep -q "^Macos = \"mac\""     <<<"$starship_out" && echo "✓ starship Macos = mac"
-          grep -q "^Debian = \"debian\"" <<<"$starship_out" && echo "✓ starship Debian = debian"
-          ! grep -q "󰥔"                  <<<"$starship_out" && echo "✓ no clock glyph"
-          ! grep -q "󰀵"                  <<<"$starship_out" && echo "✓ no macos nerd glyph"
+          check "starship Macos = mac"         has '^Macos = "mac"'     "$starship_out"
+          check "starship Debian = debian"     has '^Debian = "debian"' "$starship_out"
+          check "no clock glyph"               lacks "󰥔"                "$starship_out"
+          check "no macos nerd glyph"          lacks "󰀵"                "$starship_out"
 
           # Ghostty: plain JetBrains Mono, not the Nerd Font variant
-          grep -q "^font-family = JetBrains Mono$" <<<"$ghostty_out" && echo "✓ ghostty plain font"
-          ! grep -q "JetBrainsMono Nerd Font"      <<<"$ghostty_out" && echo "✓ no Nerd Font in ghostty"
+          check "ghostty plain font"           has '^font-family = JetBrains Mono$' "$ghostty_out"
+          check "no Nerd Font in ghostty"      lacks "JetBrainsMono Nerd Font"      "$ghostty_out"
 
           # zshrc fzf-tab previews drop --icons
-          ! grep -q "eza .* --icons" <<<"$zshrc_out" && echo "✓ fzf-tab previews drop --icons"
+          check "fzf-tab previews drop --icons" lacks "eza .* --icons" "$zshrc_out"
