@@ -57,9 +57,11 @@ return {
       hide_terminal_in_new_tab = true,
     },
     models = {
-      { name = "Claude Opus 4.7 (Latest)", value = "opus" },
-      { name = "Claude Sonnet 4.6 (Latest)", value = "sonnet" },
-      { name = "Opusplan: Claude Opus 4.7 (Latest) + Sonnet 4.6 (Latest)", value = "opusplan" },
+      -- Values are Claude Code aliases (always resolve to the newest model
+      -- of that family); only the labels need bumping on new releases.
+      { name = "Claude Opus 5.5 (Latest)", value = "opus" },
+      { name = "Claude Sonnet 5.5 (Latest)", value = "sonnet" },
+      { name = "Opusplan: Claude Opus 5.5 (Latest) + Sonnet 5.5 (Latest)", value = "opusplan" },
       { name = "Claude Haiku 4.5 (Latest)", value = "haiku" },
     },
     -- ===== smart cwd resolution =====

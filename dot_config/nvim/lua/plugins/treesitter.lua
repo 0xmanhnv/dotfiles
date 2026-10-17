@@ -16,7 +16,8 @@ return {
       -- Document / typesetting (snacks.image image rendering)
       "latex",
       "typst",
-      "norg",
+      -- norg dropped: nvim-treesitter's main branch no longer ships it
+      -- (startup warned "skipping unsupported language: norg").
     })
   end,
 }

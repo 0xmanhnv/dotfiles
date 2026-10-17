@@ -1,13 +1,20 @@
--- Tokyonight Moon variant. Tokyonight ships with LazyVim by default; this
--- spec just selects the moon style and sets it as the active colorscheme.
--- Other variants: storm (LazyVim default), night, day.
+-- Catppuccin, following the terminal's light/dark mode: Mocha on a dark
+-- background, Latte on a light one — same pair as Ghostty, tmux, starship,
+-- delta and bat. Neovim (0.10+) asks the terminal for its background color
+-- at startup (OSC 11) and sets 'background'; flavour = "auto" maps that to
+-- the matching flavour. The plugin spec itself ships with LazyVim (lazy,
+-- with its integrations list); this only picks the flavours.
 return {
   {
-    "folke/tokyonight.nvim",
-    opts = { style = "moon" },
+    "catppuccin/nvim",
+    name = "catppuccin",
+    opts = {
+      flavour = "auto",
+      background = { light = "latte", dark = "mocha" },
+    },
   },
   {
     "LazyVim/LazyVim",
-    opts = { colorscheme = "tokyonight-moon" },
+    opts = { colorscheme = "catppuccin" },
   },
 }

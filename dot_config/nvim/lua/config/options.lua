@@ -103,15 +103,9 @@ vim.opt.guicursor = table.concat({
 vim.opt.diffopt:append("linematch:60")
 vim.opt.diffopt:append("algorithm:histogram")
 
--- 2. Override color diff (edit hex colorscheme for you)
-vim.api.nvim_create_autocmd("ColorScheme", {
-  callback = function()
-    vim.api.nvim_set_hl(0, "DiffAdd", { bg = "#2d4f3e" })
-    vim.api.nvim_set_hl(0, "DiffDelete", { bg = "#5c2929", fg = "#ff6b6b" })
-    vim.api.nvim_set_hl(0, "DiffChange", { bg = "#2d3a5c" })
-    vim.api.nvim_set_hl(0, "DiffText", { bg = "#4a5a8a", bold = true })
-  end,
-})
+-- Diff colors come from the colorscheme (catppuccin has distinct
+-- Diff{Add,Change,Delete,Text} for both Mocha and Latte). Hardcoded dark
+-- hex overrides here used to wreck diffs in light mode.
 
 -- When nvim is opened with a directory argument, cd into that directory
 vim.api.nvim_create_autocmd("VimEnter", {
