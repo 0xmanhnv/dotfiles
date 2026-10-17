@@ -51,7 +51,7 @@ else
 fi
 
 # --- 3. Clone the 4 zsh plugins ---------------------------------------------
-# Mirror run_once_before_02-install-zsh-plugins.sh.tmpl: same set, same order.
+# Mirror .chezmoiexternal.toml: same set, same order.
 PLUGIN_DIR="$HOME/.local/share/zsh/plugins"
 mkdir -p "$PLUGIN_DIR"
 plugins=(

@@ -1,0 +1,24 @@
+# External git repos managed by chezmoi (always rendered as a template).
+#
+# zsh plugins: cloned on first `chezmoi apply`, then fast-forwarded at most
+# once a week (refreshPeriod) — or immediately with
+# `chezmoi apply --refresh-externals`. Unlike a run_once script they also
+# get installed by `bootstrap.sh --minimal`, which excludes scripts.
+# ~/.zshrc sources them from ~/.local/share/zsh/plugins/<name>/.
+#
+# Order of sourcing lives in dot_zshrc.tmpl; this list is just the set.
+{{- $plugins := list
+      "zsh-users/zsh-autosuggestions"
+      "Aloxaf/fzf-tab"
+      "zsh-users/zsh-syntax-highlighting"
+      "zsh-users/zsh-history-substring-search" }}
+{{- range $plugins }}
+{{- $name := base . }}
+
+[".local/share/zsh/plugins/{{ $name }}"]
+    type = "git-repo"
+    url = "https://github.com/{{ . }}.git"
+    refreshPeriod = "168h"
+    clone.args = ["--depth", "1"]
+    pull.args = ["--ff-only"]
+{{- end }}

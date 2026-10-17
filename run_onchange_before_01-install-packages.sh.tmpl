@@ -1,4 +1,21 @@
 #!/usr/bin/env bash
+# run_onchange_: chezmoi re-runs this whenever its rendered content changes.
+# The hashes below embed the package lists for this OS, so editing Brewfile
+# (or packages/*.txt) re-installs on the next `chezmoi apply` — not only on
+# the very first one. Every installer below is idempotent.
+{{ if eq .chezmoi.os "darwin" -}}
+# Brewfile hash: {{ include "Brewfile" | sha256sum }}
+{{ if .pentest -}}
+# Brewfile.pentest hash: {{ include "Brewfile.pentest" | sha256sum }}
+{{ end -}}
+{{ else if eq .chezmoi.os "linux" -}}
+{{ range list "apt" "dnf" "pacman" -}}
+# packages/{{ . }}.txt hash: {{ include (printf "packages/%s.txt" .) | sha256sum }}
+{{ if $.pentest -}}
+# packages/{{ . }}.pentest.txt hash: {{ include (printf "packages/%s.pentest.txt" .) | sha256sum }}
+{{ end -}}
+{{ end -}}
+{{ end -}}
 set -euo pipefail
 
 {{ if eq .chezmoi.os "darwin" -}}
@@ -13,10 +30,12 @@ else
   eval "$(/usr/local/bin/brew shellenv)"
 fi
 
-brew bundle --file="{{ .chezmoi.sourceDir }}/Brewfile"
+# --no-upgrade: a re-run because one line was added to the Brewfile should
+# install what's missing, not upgrade every formula (`brew upgrade` does that).
+brew bundle --no-upgrade --file="{{ .chezmoi.sourceDir }}/Brewfile"
 {{ if .pentest -}}
 echo "==> Installing pentest toolkit (pentest flag = true)"
-brew bundle --file="{{ .chezmoi.sourceDir }}/Brewfile.pentest"
+brew bundle --no-upgrade --file="{{ .chezmoi.sourceDir }}/Brewfile.pentest"
 {{ end -}}
 {{ else if eq .chezmoi.os "linux" -}}
 echo "==> Installing Linux packages"
