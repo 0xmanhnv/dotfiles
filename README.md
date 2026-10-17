@@ -168,13 +168,13 @@ pipx install impacket
 pipx install git+https://github.com/Pennyw0rth/NetExec
 ```
 
-### Docker / OrbStack
+### Docker
 
 Container runtime is included in every OS list (always installed):
 
 | OS                | Tool                                      |
 | ----------------- | ----------------------------------------- |
-| macOS             | OrbStack (`cask "orbstack"`)              |
+| macOS             | Docker Desktop (`cask "docker-desktop"`)  |
 | Debian/Ubuntu/Kali| `docker.io docker-compose-v2 docker-buildx` |
 | Fedora            | `moby-engine docker-compose`              |
 | Arch              | `docker docker-compose docker-buildx`     |
@@ -182,7 +182,13 @@ Container runtime is included in every OS list (always installed):
 On Linux the install script runs `systemctl enable --now docker` and adds
 the current user to the `docker` group automatically — log out / `newgrp
 docker` for the group change to take effect in the active shell. On
-macOS, launch OrbStack once after install (Spotlight → "OrbStack").
+macOS, launch Docker Desktop once after install to finish its setup.
+
+Docker Desktop over OrbStack: OrbStack is lighter and faster, but Docker
+Desktop is the reference engine everything is tested against. If Docker.app
+was installed from the .dmg, the Brewfile skips the cask (brew would refuse
+to overwrite the app); `brew install --cask --force docker-desktop` hands it
+over to brew, which then also links the zsh completions.
 
 ### SSH terminfo on remote hosts
 

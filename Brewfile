@@ -54,7 +54,14 @@ brew "rlwrap"
 # Casks
 cask "ghostty"
 cask "font-jetbrains-mono-nerd-font"
-cask "orbstack"        # Docker / K8s / Linux VMs — drop-in for Docker Desktop
+# Docker Desktop: the reference Docker engine for macOS (Compose, Buildx,
+# Kubernetes bundled). Skipped when Docker.app was installed outside brew
+# (.dmg): `brew install` would abort on the existing app and take the whole
+# bundle run down with it. To hand an existing install over to brew (so it
+# also gets the zsh completions): brew install --cask --force docker-desktop
+docker_desktop_by_hand = File.exist?("/Applications/Docker.app") &&
+  !Dir.exist?("#{ENV.fetch("HOMEBREW_PREFIX", "/opt/homebrew")}/Caskroom/docker-desktop")
+cask "docker-desktop" unless docker_desktop_by_hand
 
 # Manual installers — NOT available via Homebrew. Install separately on a fresh
 # machine if you need them (see ~/.config/zsh/40-darwin.zsh for PATH setup):
