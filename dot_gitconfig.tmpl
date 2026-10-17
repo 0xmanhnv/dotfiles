@@ -17,9 +17,33 @@
 [push]
 	default = current
 	autoSetupRemote = true
+	followTags = true
 
 [fetch]
 	prune = true
+
+[branch]
+	# `git branch`: most recently touched first
+	sort = -committerdate
+
+[tag]
+	# v1.10 sorts after v1.9, not after v1.1
+	sort = version:refname
+
+[column]
+	ui = auto
+
+[commit]
+	# Show the diff below the message in the commit editor
+	verbose = true
+
+[rerere]
+	# Remember how a conflict was resolved and replay it next time
+	enabled = true
+
+[help]
+	# `git stauts` -> "did you mean status? [y/N]"
+	autocorrect = prompt
 
 [core]
 	editor = nvim
@@ -35,6 +59,7 @@
 [diff]
 	algorithm = histogram
 	colorMoved = default
+	renames = copies
 
 [interactive]
 	diffFilter = delta --color-only
@@ -43,14 +68,25 @@
 	navigate = true
 	line-numbers = true
 	side-by-side = false
-	syntax-theme = Catppuccin-mocha
 	hyperlinks = true
+	# Catppuccin to match Ghostty / Neovim / starship. Mocha by default;
+	# ~/.config/zsh/00-env.zsh exports DELTA_FEATURES=+catppuccin-latte
+	# when the OS is in light mode. Theme names are bat's (`bat --list-themes`).
+	features = catppuccin-mocha
+
+[delta "catppuccin-mocha"]
+	syntax-theme = Catppuccin Mocha
+
+[delta "catppuccin-latte"]
+	syntax-theme = Catppuccin Latte
 
 [merge]
 	conflictstyle = zdiff3
 
 [rebase]
 	autoStash = true
+	# Stacked branches pointing into the rebased range follow along
+	updateRefs = true
 
 [alias]
 	st = status -sb
@@ -70,3 +106,11 @@
 [credential]
 	helper = cache --timeout=3600
 {{- end }}
+
+# Per-machine overrides (work email, signing key, extra credential helpers...)
+# live in ~/.gitconfig.local: untracked, so `chezmoi apply` never clobbers
+# them. Included last so its values win; a missing file is silently ignored.
+#   [user]
+#   	email = me@work.example
+[include]
+	path = ~/.gitconfig.local
