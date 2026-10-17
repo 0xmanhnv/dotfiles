@@ -44,3 +44,6 @@ $RECYCLE.BIN/
 # Direnv / mise / asdf state
 .direnv/
 .tool-versions.local
+
+# Claude Code per-user overrides (project .claude/settings.json stays tracked)
+**/.claude/settings.local.json
