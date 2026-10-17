@@ -65,7 +65,7 @@ keybind = ctrl+shift+right=move_tab:1
 # ============================================================================
 # macOS-specific
 # ============================================================================
-macos-titlebar-style = tabs
+macos-titlebar-style = native
 macos-titlebar-proxy-icon = hidden
 macos-option-as-alt = true
 quit-after-last-window-closed = true
@@ -73,6 +73,10 @@ maximize = true
 
 # Quick terminal toggle: Cmd-`
 keybind = global:cmd+grave_accent=toggle_quick_terminal
+
+# Cmd-C copies plain text only — no rich/HTML formatting when pasting into
+# other apps (Slack, Notes, docs).
+keybind = cmd+c=copy_to_clipboard:plain
 
 # Optional Cmd-based bindings (uncomment to enable)
 # keybind = cmd+s=text:\x1b:w\n
