@@ -17,11 +17,14 @@ What that does, in order:
 
 1. Installs the `chezmoi` binary
 2. Clones this repo into `~/.local/share/chezmoi`
-3. Runs `run_once_before_*` scripts:
-   - `01-install-packages` — `brew bundle` (macOS) or apt / pacman / dnf (Linux) using the `packages/*.txt` lists. Installs zsh, neovim, tmux, eza, bat, fzf, zoxide, ripgrep, fd, jq, gh, starship, language toolchains (openjdk, node, go, python, ruby), and OS-specific extras. On Ubuntu/Debian, NodeSource is set up first so `nodejs` resolves to v24 LTS instead of the apt's old v18.
-   - `02-install-zsh-plugins` — clones 4 zsh plugins (`zsh-autosuggestions`, `fzf-tab`, `zsh-syntax-highlighting`, `zsh-history-substring-search`) into `~/.local/share/zsh/plugins/`.
-   - `03-install-rust` — runs the official rustup installer (stable toolchain). Skipped if `~/.cargo` already exists.
-4. Renders templates (OS-aware) and links every dotfile into place
+3. Runs the `before` scripts:
+   - `run_onchange_before_01-install-packages` — `brew bundle` (macOS) or apt / pacman / dnf (Linux) using the `packages/*.txt` lists. It embeds a hash of this OS's package lists, so it **re-runs whenever you edit the Brewfile / `packages/*.txt`** (idempotent; `brew bundle --no-upgrade`). Installs zsh, neovim, tmux, eza, bat, fzf, zoxide, ripgrep, fd, jq, gh, starship, language toolchains (openjdk, node, go, python, ruby), and OS-specific extras. On Ubuntu/Debian, NodeSource is set up first so `nodejs` resolves to v24 LTS instead of the apt's old v18.
+   - `run_once_before_03-install-rust` — runs the official rustup installer (stable toolchain). Skipped if `~/.cargo` already exists.
+4. Renders templates (OS-aware) and links every dotfile into place. The 4 zsh
+   plugins (`zsh-autosuggestions`, `fzf-tab`, `zsh-syntax-highlighting`,
+   `zsh-history-substring-search`) come from `.chezmoiexternal.toml` into
+   `~/.local/share/zsh/plugins/` and are fast-forwarded weekly
+   (`chezmoi apply --refresh-externals` to force).
 5. Runs `run_once_after_*` scripts:
    - `02-setup-shell` — `chsh` to zsh. TPM is bootstrapped by `~/.tmux.conf` itself on first tmux launch.
 
@@ -215,7 +218,7 @@ the remote (same package, same name).
 .
 ├── .editorconfig                      Editor defaults (indent, charset, EOL)
 ├── .gitignore                         Repo metadata (OS cruft, editor swap, chezmoi local data)
-├── .github/workflows/ci.yml           shellcheck + chezmoi bootstrap on Ubuntu / Fedora / Kali
+├── .github/workflows/ci.yml           lint + chezmoi bootstrap on Ubuntu / Fedora / Kali / Debian + macOS minimal
 │
 ├── scripts/
 │   ├── bootstrap.sh                   Pre-flight installer (git/curl + chezmoi); supports --minimal
@@ -234,22 +237,23 @@ the remote (same package, same name).
 │
 ├── .chezmoidata.yaml                  Variables (identity + nerd_font / slow_terminal / pentest / profile flags)
 ├── .chezmoiignore                     Per-OS file filters
+├── .chezmoiexternal.toml              zsh plugins (git repos, weekly refresh)
 │
 ├── dot_zshrc.tmpl                     Loader: pure zsh + Starship + 4 plugins (gates fzf-tab --icons + syntax-highlighting via flags)
 ├── dot_zshenv                         Pre-shell PATH (cargo, foundry — both guarded) + TERM safety fallback
-├── dot_gitconfig.tmpl                 Git config (templated identity, points at ~/.gitignore_global)
+├── dot_gitconfig.tmpl                 Git config (templated identity, delta, includes ~/.gitconfig.local)
 ├── dot_gitignore_global               Patterns ignored in EVERY git repo (.DS_Store, IDE state, *.local, ...)
-├── dot_tmux.conf                      tmux + auto-install TPM
+├── dot_tmux.conf                      tmux + auto-install TPM, Catppuccin status following light/dark
 │
 ├── dot_config/
-│   ├── nvim/                          LazyVim distro + snacks dashboard (Buddha banner)
+│   ├── nvim/                          LazyVim distro + catppuccin (auto light/dark) + snacks dashboard
 │   ├── ghostty/config.tmpl            Cross-OS terminal emulator (font gated by nerd_font)
 │   ├── starship.toml.tmpl             Custom Catppuccin Mocha prompt (OS/clock glyphs gated by nerd_font)
 │   └── zsh/                           Modular shell config (see below)
 │
-├── private_dot_ssh/config.tmpl        SSH client (0600, Include config.local for hosts)
+├── private_dot_ssh/config.tmpl        SSH client (0600, Include config.local, IdentitiesOnly, multiplexing)
 │
-└── run_once_*.sh.tmpl                 Idempotent setup scripts (packages, plugins, rustup, chsh)
+└── run_*.sh.tmpl                      Idempotent setup scripts (packages on change; rustup, chsh once)
 ```
 
 ---
@@ -272,17 +276,18 @@ hidden files when browsing in a file manager.
 
 ## Modular zsh
 
-`~/.zshrc` is a 60-line **loader**. The real config lives in
+`~/.zshrc` is a small **loader**. The real config lives in
 `~/.config/zsh/*.zsh`, sourced in lexical order:
 
 | File             | Purpose                                                                                           |
 | ---------------- | ------------------------------------------------------------------------------------------------- |
-| `00-env.zsh`     | Cross-OS env vars (`HOMEBREW_NO_*`, `JAVA_TOOL_OPTIONS`, `PYTHONDONTWRITEBYTECODE`)               |
-| `10-path.zsh`    | Common PATH entries (`~/.local/bin`, `~/go/bin`) — all guarded with `[[ -d ]]`                    |
-| `20-tools.zsh`   | Tool init: cargo, gvm, jenv (eager), redos, **zoxide** (`z`), **fzf** keybindings (Ctrl-R / T / Alt-C) |
+| `00-env.zsh`     | Cross-OS env vars (`HOMEBREW_NO_*`, `JAVA_TOOL_OPTIONS`, `PYTHONDONTWRITEBYTECODE`), bat/delta light/dark theme |
+| `05-brew.zsh`    | Homebrew / Linuxbrew `shellenv` + keg-only formulae via `opt/` symlinks. Loads **before** version managers |
+| `10-path.zsh`    | Common PATH entries (`~/go/bin`) — guarded with `[[ -d ]]`                                         |
+| `20-tools.zsh`   | Tool init: gvm (lazy), jenv (hand-rolled, JAVA_HOME on `cd`), redos, **zoxide** (`z`), **fzf** keybindings (Ctrl-R / T / Alt-C) |
 | `30-aliases.zsh` | `ls/ll/lt` (eza), `cat` (bat), `..` `...`, `take` fn, term-title hooks, 20 git aliases            |
-| `40-darwin.zsh`  | macOS only: Homebrew Cellar globs, Android SDK, Ghostty integration                               |
-| `40-linux.zsh`   | Linux only: Linuxbrew, snap, flatpak                                                              |
+| `40-darwin.zsh`  | macOS only: GNU inetutils/binutils, Android SDK, Metasploit/Sliver/LM Studio paths                |
+| `40-linux.zsh`   | Linux only: snap, flatpak, upstream nvim tarball                                                  |
 
 OS-specific files are filtered by `.chezmoiignore`, so on Linux the macOS
 file isn't even rendered to disk.
@@ -292,28 +297,44 @@ file isn't even rendered to disk.
 1. **Adding a tool** is a 1-file edit, not "scroll through 250-line zshrc".
 2. **`git diff`** stays per-topic.
 3. **OS isolation** is structural (filename), not runtime conditionals.
-4. **Cellar paths use globs** (`sort -V | tail -1`) — `brew upgrade` doesn't
-   require editing PATH versions.
+4. **No versioned paths** — keg-only formulae go through Homebrew's
+   `opt/<formula>` symlinks, so `brew upgrade` never breaks PATH.
 
 ### Machine-specific overrides
 
-Anything truly local (work laptop API keys, employer-specific paths) goes in
-`~/.zshrc.local`. The loader sources it last. Not tracked.
+Anything truly local goes in an untracked file that `chezmoi apply` never
+touches:
+
+| File                 | For                                                       |
+| -------------------- | --------------------------------------------------------- |
+| `~/.zshrc.local`     | API keys, employer-specific paths (sourced last)          |
+| `~/.gitconfig.local` | Work email, signing key, extra credential helpers (`[include]`d last) |
+| `~/.ssh/config.local`| Real hosts (`Include`d before the `Host *` defaults)      |
 
 ### Performance notes
 
-- `jenv` is initialized eagerly so `JAVA_HOME` auto-switches on `cd` in every
-  shell (~50ms startup cost, accepted as a daily-driver tool). Future tools
-  with similarly slow init (rbenv/nvm/pyenv) can be lazy-loaded with the
-  stub-function pattern if startup speed becomes a concern.
+- Startup is ~0.14s on an M-series Mac (was ~0.65s). Measure with
+  `for i in {1..5}; do /usr/bin/time zsh -lic exit; done`, profile with
+  `zmodload zsh/zprof` at the top of `~/.zshrc` + `zprof` at the bottom.
+- `jenv` doesn't use `jenv init -`: that rehashes on every start, and its
+  export plugin forks `jenv javahome` in **precmd** — ~50ms after every
+  command. `20-tools.zsh` recomputes `JAVA_HOME` on `cd` and after `jenv …`.
+  After installing a new JDK: `jenv add "$(brew --prefix openjdk@25)"`.
+- `gvm`'s main script (~200ms) loads on first `gvm …`; the default Go
+  environment is exported eagerly. Since Go 1.21 the `toolchain` line in
+  `go.mod` makes most per-project gvm switching unnecessary.
+- Homebrew loads before gvm/jenv so their `go`/`java` win over brew's —
+  otherwise `go build` fails with a GOROOT/toolchain version mismatch.
+- `PATH`/`FPATH` are deduplicated (`typeset -U` + `path=($path)`), so nested
+  shells (tmux panes, nvim `:terminal`) don't keep growing them.
 - Loader uses `null_glob` so an empty `~/.config/zsh/` doesn't error. Real
   syntax errors are still printed by zsh itself with file:line, so the loader
   doesn't wrap `source` with a custom reporter (it would false-fire on files
   that legitimately end on a falsey conditional).
-- `compinit` cached daily — full re-build only runs if `~/.zcompdump` is older
-  than 24 hours.
-- `40-darwin.zsh` detects `BREW_PREFIX` (`/opt/homebrew` on Apple Silicon,
-  `/usr/local` on Intel) so all Cellar/opt globs work on both arches.
+- `compinit` trusts its cache (`-C`) unless `~/.zcompdump` is >24h old, the
+  set of fpath dirs changed, or a fpath dir is newer than the dump (a new
+  `brew install` dropped a completion). Brew's `site-functions` is put on
+  fpath before compinit so `gh`/`brew`/`chezmoi` completions load.
 
 ### fzf-tab UX
 
@@ -395,7 +416,7 @@ docker run -it --rm ubuntu:24.04 bash -c '
 
 Takes ~5–10 minutes. The container is wiped on exit, no cleanup needed.
 Swap `ubuntu:24.04` for `archlinux:latest` or `fedora:latest` to test the
-other distro paths in `run_once_before_01-install-packages.sh.tmpl`.
+other distro paths in `run_onchange_before_01-install-packages.sh.tmpl`.
 
 > **Private repo?** This needs `chezmoi init` to be able to clone via HTTPS or
 > SSH. Either make the repo public for the test, mount a PAT into the
@@ -455,9 +476,10 @@ real macOS GUI. Options:
 | ----------- | ------------------------------------------------------------------- |
 | Shell       | zsh + [starship](https://starship.rs/) + 4 plugins ([zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions), [fzf-tab](https://github.com/Aloxaf/fzf-tab), [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting), [zsh-history-substring-search](https://github.com/zsh-users/zsh-history-substring-search)) — no framework |
 | Editor      | [Neovim](https://neovim.io/) + [LazyVim](https://www.lazyvim.org/) + [snacks.nvim](https://github.com/folke/snacks.nvim) explorer/dashboard/picker |
-| Terminal    | [Ghostty](https://ghostty.org/) (macOS) — Catppuccin Mocha theme    |
+| Terminal    | [Ghostty](https://ghostty.org/) (macOS) — Catppuccin, Mocha/Latte following OS appearance |
 | Multiplexer | [tmux](https://github.com/tmux/tmux) + [TPM](https://github.com/tmux-plugins/tpm) — see [docs/nvim-tmux.md](docs/nvim-tmux.md) for the Neovim+tmux workflow |
 | Prompt      | [Starship](https://starship.rs/) — custom Catppuccin Mocha config (info-rich, no segments) |
+| Theme       | Catppuccin everywhere: Ghostty, Neovim (`flavour = "auto"`), tmux (3.6+ theme hooks), delta, bat — dark = Mocha, light = Latte |
 | CLI tools   | [eza](https://github.com/eza-community/eza), [bat](https://github.com/sharkdp/bat), [ripgrep](https://github.com/BurntSushi/ripgrep), [fd](https://github.com/sharkdp/fd), [fzf](https://github.com/junegunn/fzf), [zoxide](https://github.com/ajeetdsouza/zoxide), [jq](https://jqlang.org/), [gh](https://cli.github.com/) |
 | Languages   | Java (openjdk@25 macOS / 21 LTS Linux) + jenv, Node 24 LTS, Go latest, Python 3.13, Ruby 3.4, Rust stable (rustup) |
 | Manager     | [chezmoi](https://www.chezmoi.io/)                                  |
@@ -471,10 +493,16 @@ real macOS GUI. Options:
 
 | Job                  | What it tests                                                  |
 | -------------------- | -------------------------------------------------------------- |
-| `shellcheck`         | All `scripts/*.sh` lint clean (excl. SC1090/SC1091 dynamic source) |
-| `bootstrap-ubuntu`   | Full `chezmoi apply` inside `ubuntu:24.04` Docker, then loads zsh and verifies aliases / plugins / starship / TPM |
+| `lint`               | shellcheck on `scripts/*.sh` **and** the rendered `run_*` scripts, `zsh -n` on every zsh file, `tmux source-file -n` |
+| `macos-minimal`      | `apply --exclude=scripts` on macOS (= `--minimal`): plugins via externals, zsh starts with no errors, no PATH duplicates |
+| `bootstrap-ubuntu`   | Full `chezmoi apply` inside `ubuntu:24.04` Docker, then loads zsh and verifies aliases / plugins / starship / nvim / delta |
 | `bootstrap-fedora`   | Full apply inside `fedora:latest` (dnf branch + `--skip-unavailable`) |
 | `bootstrap-kali`     | Full apply inside `kalilinux/kali-rolling` (Debian branch, NodeSource auto-skipped via `/etc/os-release` ID check) |
+| `bootstrap-debian-bookworm` | Full apply on Debian 12 — exercises the eza/zoxide/yq/nvim/font fallback installers |
+| `template-nerd-font-false`  | Renders templates with `nerd_font: false` and asserts the ASCII branch |
+
+Every assertion goes through a `check` helper that fails the job — a bare
+`test … && echo ✓` would silently pass.
 
 This catches regressions like "OMZ install runs before zsh is installed" or
 "NodeSource conflicts with apt's `npm`" before they hit a real machine.
@@ -489,13 +517,16 @@ extensions, etc.). Either `chezmoi re-add <file>` to accept the change, or
 add the file to `.chezmoiignore` if it's never worth tracking.
 
 **Tool reports "command not found" after fresh apply.**
-The `run_once_install-packages` script may have failed silently. Re-run:
+The package install script may have failed. It re-runs on its own whenever
+the package lists change; to force it without editing a list, clear
+chezmoi's record of run_onchange scripts and apply again:
 
 ```sh
-chezmoi apply --refresh-externals --force
+chezmoi state delete-bucket --bucket=entryState   # forget script hashes
+chezmoi apply
 ```
 
-Then check `brew bundle --file=~/.local/share/chezmoi/Brewfile` (macOS) or
+Or run the installer directly: `brew bundle --file=~/.local/share/chezmoi/Brewfile` (macOS) or
 `xargs -a ~/.local/share/chezmoi/packages/apt.txt sudo apt-get install -y`
 (Debian).
 
