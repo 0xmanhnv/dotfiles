@@ -136,7 +136,7 @@ NEXT STEPS
 
   3. Visual confirmation:
        - Buddha banner shows
-       - Prompt switches to Starship (multi-line, git-aware)
+       - Prompt switches to Starship (git-aware)
        - Typing a command shows ghost-text (autosuggest)
        - Wrong command name turns red (syntax-highlight)
 

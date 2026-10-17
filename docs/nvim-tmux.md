@@ -21,12 +21,15 @@ Source files: [`dot_tmux.conf`](../dot_tmux.conf),
 
 ## First-time bootstrap
 
-After `chezmoi apply`, launch `tmux`. The config self-bootstraps TPM and
-installs plugins on first run:
+`chezmoi apply` clones TPM and the plugins (`.chezmoiexternal.toml`, refreshed
+weekly), so tmux starts with everything loaded:
 
 ```sh
-tmux           # opens a session; TPM clones itself + installs plugins
+tmux           # opens a session; sensible / yank / resurrect / continuum active
 ```
+
+Adding a plugin: put the `set -g @plugin` line in `dot_tmux.conf` **and** the
+repo in `.chezmoiexternal.toml`, or install it ad hoc with `<prefix> I`.
 
 If plugin install gets stuck or you add new `@plugin` lines later:
 

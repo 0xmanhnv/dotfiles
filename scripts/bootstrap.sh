@@ -127,4 +127,4 @@ else
 fi
 
 echo "==> Done. Open a new terminal (or 'exec zsh')."
-echo "    chezmoi binary: $CHEZMOI (~/.local/bin is on PATH via dot_config/zsh/10-path.zsh)"
+echo "    chezmoi binary: $CHEZMOI (~/.local/bin is put on PATH by ~/.zshrc)"

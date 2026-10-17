@@ -26,7 +26,7 @@ What that does, in order:
    `~/.local/share/zsh/plugins/` and are fast-forwarded weekly
    (`chezmoi apply --refresh-externals` to force).
 5. Runs `run_once_after_*` scripts:
-   - `02-setup-shell` — `chsh` to zsh. TPM is bootstrapped by `~/.tmux.conf` itself on first tmux launch.
+   - `02-setup-shell` — `chsh` to zsh. TPM and the tmux plugins are externals (cloned with the zsh plugins).
 
 If the machine doesn't have `git`/`curl` yet, run the bootstrap helper:
 
@@ -118,8 +118,7 @@ nerd_font = false
 ```
 
 Then `chezmoi apply`. Starship's OS icon falls back to plain distro names
-(`mac`, `arch`, `debian`…), the clock prefix and folder substitutions are
-dropped, fzf-tab previews drop `--icons`, and Ghostty's `font-family` falls
+(`mac`, `arch`, `debian`…), the clock prefix is dropped, fzf-tab previews drop `--icons`, and Ghostty's `font-family` falls
 back to plain `JetBrains Mono`. The `eza` aliases (`ls`/`ll`/`la`/`lt`/
 `tree`) never request `--icons` regardless of this flag — pass `--icons`
 ad hoc when you want them.
@@ -249,7 +248,7 @@ the remote (same package, same name).
 ├── dot_zshenv                         Pre-shell PATH (cargo, foundry — both guarded) + TERM safety fallback
 ├── dot_gitconfig.tmpl                 Git config (templated identity, delta, includes ~/.gitconfig.local)
 ├── dot_gitignore_global               Patterns ignored in EVERY git repo (.DS_Store, IDE state, *.local, ...)
-├── dot_tmux.conf                      tmux + auto-install TPM, Catppuccin status following light/dark
+├── dot_tmux.conf                      tmux + TPM (plugins via externals), Catppuccin status following light/dark
 │
 ├── dot_config/
 │   ├── nvim/                          LazyVim distro + catppuccin (auto light/dark) + snacks dashboard
@@ -398,7 +397,7 @@ chezmoi re-add ~/.config/nvim/lazy-lock.json
 | Default terminal             | Ghostty (config tracked)               | (your choice)        |
 | `40-darwin.zsh`              | Loaded                   | Skipped              |
 | `40-linux.zsh`               | Skipped                  | Loaded               |
-| Cellar version pinning       | Auto via glob            | N/A                  |
+| Keg-only formula paths       | `opt/` symlinks (version-free) | N/A            |
 | Git credential helper        | `osxkeychain`            | `cache --timeout`    |
 | SSH `UseKeychain`            | Yes                      | No                   |
 | Java LTS                     | openjdk@25 (latest LTS)  | openjdk-21 (broader distro support) |
