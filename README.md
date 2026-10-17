@@ -10,7 +10,7 @@ fresh machine in one command. Managed with [chezmoi](https://www.chezmoi.io).
 On a brand-new machine:
 
 ```sh
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply 0xmanhnv
+sh -c "$(curl --proto '=https' -fsLS https://get.chezmoi.io)" -- init --apply 0xmanhnv
 ```
 
 What that does, in order:
@@ -416,7 +416,7 @@ in a throwaway container.
 ```sh
 docker run -it --rm ubuntu:24.04 bash -c '
   apt-get update -qq && apt-get install -y -qq curl sudo
-  sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply 0xmanhnv
+  sh -c "$(curl --proto '=https' -fsLS https://get.chezmoi.io)" -- init --apply 0xmanhnv
 '
 ```
 
@@ -435,7 +435,7 @@ Useful while iterating on the source dir before pushing:
 ```sh
 docker run -it --rm -v "$PWD:/dotfiles:ro" ubuntu:24.04 bash -c '
   apt-get update -qq && apt-get install -y -qq curl sudo git
-  sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+  sh -c "$(curl --proto '=https' -fsLS https://get.chezmoi.io)" -- -b /usr/local/bin
   chezmoi --source=/dotfiles apply
 '
 ```

@@ -52,6 +52,10 @@ OS="$(uname -s)"
 if [[ "$OS" == "Darwin" ]]; then
   if ! command -v brew >/dev/null 2>&1; then
     echo "==> Installing Homebrew"
+    # `curl ... | bash` leaves stdin as a pipe, so Homebrew's installer goes
+    # non-interactive and only checks `sudo -n` — which fails without cached
+    # credentials. Prompt once here (sudo reads the password from /dev/tty).
+    sudo -v
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   fi
   if [[ "$(uname -m)" == "arm64" ]]; then
@@ -65,7 +69,7 @@ elif [[ "$OS" == "Linux" ]]; then
     sudo apt-get update
     sudo apt-get install -y git curl ca-certificates
   elif [[ -f /etc/arch-release ]]; then
-    sudo pacman -Sy --noconfirm git curl
+    sudo pacman -Syu --noconfirm --needed git curl
   elif [[ -f /etc/fedora-release || -f /etc/redhat-release ]]; then
     sudo dnf install -y git curl
   else
@@ -98,7 +102,7 @@ fi
 echo "==> Installing chezmoi to ~/.local/bin"
 INSTALL_DIR="$HOME/.local/bin"
 mkdir -p "$INSTALL_DIR"
-sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$INSTALL_DIR" init "$GITHUB_USER"
+sh -c "$(curl --proto '=https' -fsLS https://get.chezmoi.io)" -- -b "$INSTALL_DIR" init "$GITHUB_USER"
 CHEZMOI="$INSTALL_DIR/chezmoi"
 
 # Clean up any chezmoi binary at the legacy default location ($HOME/bin/),

@@ -19,7 +19,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq zsh shellcheck tmux
-          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+          sh -c "$(curl --proto =https -fsLS https://get.chezmoi.io)" -- -b /usr/local/bin
       - name: Render templates
         run: |
           set -euo pipefail
@@ -37,7 +37,8 @@ jobs:
         run: |
           set -euo pipefail
           for f in dot_zshenv dot_config/zsh/*.zsh /tmp/render/zshrc; do
-            zsh -n "$f" && echo "✓ $f"
+            zsh -n "$f" || { echo "✗ $f"; exit 1; }
+            echo "✓ $f"
           done
       - name: tmux config parses
         run: tmux -L ci -f /dev/null start-server \; source-file -n dot_tmux.conf
@@ -69,6 +70,9 @@ jobs:
           # Externals are not scripts, so --minimal must still get plugins
           for p in zsh-autosuggestions fzf-tab zsh-syntax-highlighting zsh-history-substring-search; do
             check "plugin $p" test -d ~/.local/share/zsh/plugins/$p/.git
+          done
+          for p in tpm tmux-sensible tmux-yank tmux-resurrect tmux-continuum; do
+            check "tmux plugin $p" test -d ~/.tmux/plugins/$p/.git
           done
 
           # Shell starts without errors. Run it under a pseudo-terminal
@@ -105,7 +109,7 @@ jobs:
             apt-get install -y -qq curl sudo git ca-certificates
 
             # Install chezmoi binary
-            sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+            sh -c "$(curl --proto =https -fsLS https://get.chezmoi.io)" -- -b /usr/local/bin
 
             # --source flag on every invocation bypasses the need for a config
             # file and avoids "chezmoi init --source=DIR" not persisting the
@@ -141,7 +145,7 @@ jobs:
             check() { local m="$1"; shift; if "$@"; then echo "✓ $m"; else echo "✗ $m"; exit 1; fi; }
             dnf install -y -q curl sudo git
 
-            sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+            sh -c "$(curl --proto =https -fsLS https://get.chezmoi.io)" -- -b /usr/local/bin
 
             chezmoi --source=/dotfiles apply --verbose
 
@@ -163,7 +167,7 @@ jobs:
             apt-get update -qq
             apt-get install -y -qq curl sudo git ca-certificates
 
-            sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+            sh -c "$(curl --proto =https -fsLS https://get.chezmoi.io)" -- -b /usr/local/bin
 
             chezmoi --source=/dotfiles apply --verbose
 
@@ -190,7 +194,7 @@ jobs:
             apt-get update -qq
             apt-get install -y -qq curl sudo git ca-certificates gpg
 
-            sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+            sh -c "$(curl --proto =https -fsLS https://get.chezmoi.io)" -- -b /usr/local/bin
 
             chezmoi --source=/dotfiles apply --verbose
 
@@ -204,6 +208,11 @@ jobs:
               test -x /opt/nvim-linux-x86_64/bin/nvim
             check "JetBrainsMono Nerd Font installed" \
               test -d "$HOME/.local/share/fonts/JetBrainsMonoNerdFont"
+            check "delta (GitHub-release fallback)"   command -v delta
+            check "yq is mikefarah/yq, not the Python wrapper" \
+              sh -c "yq --version | grep -qi mikefarah"
+            check "bat / fd under their usual names" \
+              sh -c "PATH=\$HOME/.local/bin:\$PATH; command -v bat && command -v fd"
           '
 
   # Render-only test for nerd_font=false. No Docker — just feed each template
@@ -215,7 +224,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install chezmoi
-        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+        run: sh -c "$(curl --proto =https -fsLS https://get.chezmoi.io)" -- -b /usr/local/bin
       - name: Render templates with nerd_font=false and assert ASCII output
         run: |
           set -euo pipefail
