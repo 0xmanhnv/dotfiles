@@ -26,7 +26,17 @@ fi
 # and per-project JAVA_HOME hooks need to be active immediately.
 if [[ -d "$HOME/.jenv" ]]; then
   export PATH="$HOME/.jenv/bin:$PATH"
-  command -v jenv >/dev/null 2>&1 && eval "$(jenv init -)"
+  if command -v jenv >/dev/null 2>&1; then
+    # The export plugin is what actually sets JAVA_HOME. It's a symlink into
+    # the versioned Cellar path, so it dangles after `brew upgrade jenv` —
+    # `-e` follows the link, re-enabling only when missing or broken. Must
+    # run before `jenv init` so the hook loads in this same shell.
+    if [[ ! -e "$HOME/.jenv/plugins/export" ]]; then
+      rm -f "$HOME/.jenv/plugins/export"
+      jenv enable-plugin export >/dev/null 2>&1
+    fi
+    eval "$(jenv init -)"
+  fi
 fi
 
 # RedOS wrappers
