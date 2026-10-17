@@ -22,3 +22,23 @@
     clone.args = ["--depth", "1"]
     pull.args = ["--ff-only"]
 {{- end }}
+
+# tmux: TPM plus the plugins declared with `set -g @plugin` in dot_tmux.conf
+# (keep both lists in sync). TPM's own first-run bootstrap only cloned tpm,
+# never the plugins, so sensible / yank / resurrect / continuum silently
+# didn't load. TPM still loads them; chezmoi just makes sure they're there.
+{{- $tmuxPlugins := list
+      "tmux-plugins/tpm"
+      "tmux-plugins/tmux-sensible"
+      "tmux-plugins/tmux-yank"
+      "tmux-plugins/tmux-resurrect"
+      "tmux-plugins/tmux-continuum" }}
+{{- range $tmuxPlugins }}
+
+[".tmux/plugins/{{ base . }}"]
+    type = "git-repo"
+    url = "https://github.com/{{ . }}.git"
+    refreshPeriod = "168h"
+    clone.args = ["--depth", "1"]
+    pull.args = ["--ff-only"]
+{{- end }}
